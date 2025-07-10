@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura do Saber</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="app-container">
+        <header id="hud">
+            <div class="mascote-container">
+                <div id="avatar-display">
+                    <div class="avatar-layer" id="avatar-companheiro"></div>
+                    <div class="avatar-layer" id="avatar-base">🧑‍🎓</div>
+                    <div class="avatar-layer" id="avatar-acessorio-cabeca"></div>
+                    <div class="avatar-layer" id="avatar-acessorio-rosto"></div>
+                </div>
+                <div id="balao-fala" class="balao">Vamos começar a explorar!</div>
+            </div>
+            <div id="hud-direita">
+                <div id="pontuacao">
+                    ⭐ Pontos: <span id="pontos-display">0</span>
+                </div>
+                <div id="botao-loja" class="hud-botao" style="display: none;">🛍️</div>
+                <div id="botao-configuracoes" class="hud-botao">⚙️</div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Tela 1: O Mapa das Ilhas -->
+            <div id="mapa-view" class="view">
+                <h1>Mapa da Aventura</h1>
+                <div class="mapa-grid">
+                    <div class="ilha" id="ilha-matematica">
+                        <div class="ilha-icone">🔢</div>
+                        <span>Ilha dos Números</span>
+                    </div>
+                    <div class="ilha" id="ilha-portugues">
+                        <div class="ilha-icone">🔤</div>
+                        <span>Ilha das Palavras</span>
+                    </div>
+                    <div class="ilha" id="ilha-ciencias">
+                        <div class="ilha-icone">🔬</div>
+                        <span>Ilha das Descobertas</span>
+                    </div>
+                     <div class="ilha" id="ilha-historia">
+                        <div class="ilha-icone">📜</div>
+                        <span>Ilha do Tempo</span>
+                    </div>
+                     <div class="ilha" id="ilha-geografia">
+                        <div class="ilha-icone">🗺️</div>
+                        <span>Ilha do Mundo</span>
+                    </div>
+                    <div class="ilha" id="ilha-ingles">
+                        <div class="ilha-icone">🇬🇧</div>
+                        <span>The English Island</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela 2: Menu de Trilhas da Matéria -->
+            <div id="trilhas-view" class="view">
+                <button class="botao-voltar" id="voltar-para-mapa">⬅</button>
+                <h2 id="trilhas-titulo"></h2>
+                <div id="trilhas-container" class="menu-container">
+                    <!-- Botões das trilhas serão inseridos aqui pelo JavaScript -->
+                </div>
+            </div>
+
+            <!-- Tela 3: Menu de Atividades da Trilha -->
+            <div id="atividades-view" class="view">
+                <button class="botao-voltar" id="voltar-para-trilhas">⬅</button>
+                <h2 id="atividades-titulo"></h2>
+                <div id="atividades-container" class="menu-container">
+                    <!-- Botões das atividades serão inseridos aqui pelo JavaScript -->
+                </div>
+            </div>
+
+            <!-- Tela 4: O Jogo -->
+            <div id="jogo-view" class="view">
+                <button class="botao-voltar" id="voltar-para-atividades">⬅</button>
+                <h2 id="titulo-jogo"></h2>
+                <div id="container-problema">
+                    <div id="enunciado-problema"></div>
+                    <div id="opcoes-resposta"></div>
+                </div>
+            </div>
+
+            <!-- Tela 5: Configurações / Login -->
+            <div id="configuracoes-view" class="view active">
+                 <button class="botao-voltar" id="voltar-config-para-mapa">⬅</button>
+                 <h2>Configurações</h2>
+                 <div id="tela-login">
+                    <h3>Quem está jogando?</h3>
+                    <div class="perfis-container">
+                        <!-- Perfis são renderizados pelo JS -->
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Tela 6: Painel do Administrador -->
+            <div id="admin-view" class="view">
+                <button class="botao-voltar" id="voltar-admin-para-config">⬅</button>
+                <h2>Painel do Administrador</h2>
+                <div class="admin-container">
+                    <div class="admin-secao">
+                        <h3>Gerenciar Brindes</h3>
+                        <div id="lista-brindes-admin"></div>
+                        <div class="admin-form">
+                            <input type="text" id="input-nome-brinde" placeholder="Nome do Brinde">
+                            <input type="number" id="input-custo-brinde" placeholder="Custo em pontos">
+                            <button id="botao-add-brinde">Adicionar Brinde</button>
+                        </div>
+                    </div>
+                    <div class="admin-secao">
+                        <h3>Gerenciar Usuários</h3>
+                        <div id="lista-usuarios-admin"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela 7: Loja de Brindes -->
+            <div id="loja-view" class="view">
+                <button class="botao-voltar" id="voltar-loja-para-mapa">⬅</button>
+                <h2>Loja de Brindes</h2>
+                <div id="loja-container" class="menu-container">
+                    <!-- Itens da loja serão inseridos aqui pelo JS -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/matematica/operacoes.js"></script>
+    <script src="js/matematica/fracoes.js"></script>
+    <script src="js/matematica/geometria.js"></script>
+    <script src="js/matematica/medidas.js"></script>
+    <script src="js/matematica/resolucao_problemas.js"></script>
+    <script src="js/matematica/estatistica.js"></script>
+    <script src="js/matematica/probabilidade.js"></script>
+    <script src="js/portugues/ortografia.js"></script>
+    <!-- Novos Módulos -->
+    <script src="js/historia.js"></script>
+    <script src="js/geografia.js"></script>
+    <script src="js/ciencias.js"></script>
+    <script src="js/ingles.js"></script>
+    
+    <script src="js/config.js"></script> 
+    
+    <script src="js/main.js"></script>
+
+</body>
+</html>
