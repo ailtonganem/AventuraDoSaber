@@ -77,7 +77,7 @@ body {
 #hud-direita {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
 }
 
 #pontuacao { font-size: 1.8rem; font-weight: bold; background-color: #fff; padding: 10px 20px; border-radius: 20px; border: 3px solid var(--cor-secundaria); color: var(--cor-ativa); transition: color 0.3s; }
@@ -134,7 +134,7 @@ main { flex-grow: 1; padding-top: 20px; position: relative; overflow-y: auto; }
 /* Menus de Trilhas e Atividades */
 .view h2 {
     font-size: 2.5rem;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     color: var(--cor-ativa);
     transition: color 0.3s;
 }
@@ -172,620 +172,70 @@ main { flex-grow: 1; padding-top: 20px; position: relative; overflow-y: auto; }
     font-size: 2.2rem;
 }
 
-/* Jogo */
-#container-problema { margin-top: 20px; }
+/* Tela de Jogo */
+#info-problema-container {
+    margin-bottom: 15px;
+}
+
+#pontos-problema {
+    display: inline-block;
+    background-color: var(--cor-secundaria);
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: bold;
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+#container-problema { margin-top: 10px; }
 #enunciado-problema { font-size: 4rem; font-weight: bold; padding: 20px; background-color: #fff; border: 3px solid var(--cor-ativa); border-radius: 20px; display: inline-block; min-width: 300px; }
 #enunciado-problema .lacuna { color: var(--cor-ativa); display: inline-block; width: 80px; border-bottom: 4px dashed #ccc; margin: 0 10px; }
-#opcoes-resposta { margin-top: 40px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+#opcoes-resposta { margin-top: 25px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
 .botao-resposta { font-family: 'Baloo 2', cursive; font-size: 2.5rem; font-weight: bold; color: #fff; background-color: var(--cor-ativa); border: none; border-radius: 15px; padding: 20px 40px; min-width: 120px; cursor: pointer; transition: background-color 0.2s, transform 0.2s; }
 .botao-resposta:hover { transform: translateY(-5px); }
 .botao-resposta.correta { background-color: var(--cor-sucesso) !important; transform: scale(1.1); }
 .botao-resposta.incorreta { background-color: var(--cor-erro) !important; color: #fff; opacity: 0.7; }
 
-/* ESTILOS PARA O JOGO VERDADEIRO OU FALSO */
-#opcoes-resposta.vf-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    padding: 0 50px;
-}
-
-#opcoes-resposta.vf-layout .botao-resposta {
-    font-size: 2.8rem;
-    padding: 30px;
+#acoes-problema-container {
+    margin-top: 25px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 15px;
+    gap: 20px;
 }
 
-#opcoes-resposta.vf-layout .botao-resposta[data-valor="Verdadeiro"] {
-    background-color: #5cb85c;
-}
-
-#opcoes-resposta.vf-layout .botao-resposta[data-valor="Falso"] {
-    background-color: #d9534f;
-}
-
-#opcoes-resposta.vf-layout .botao-resposta[data-valor="Verdadeiro"]:hover {
-    background-color: #4a9b4a;
-}
-#opcoes-resposta.vf-layout .botao-resposta[data-valor="Falso"]:hover {
-    background-color: #b5403c;
-}
-
-#opcoes-resposta.vf-layout .botao-resposta.correta {
-    background-color: var(--cor-sucesso) !important;
-}
-
-/* ESTILOS PARA O JOGO DE FRAÇÕES */
-.fracao-visual {
-    display: flex;
-    width: 80%;
-    height: 60px;
-    margin: 20px auto 0;
-    border: 3px solid #666;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.fracao-visual .parte {
-    flex-grow: 1;
-    background-color: #e0e0e0;
-    border-left: 1px solid #999;
-}
-
-.fracao-visual .parte:first-child {
-    border-left: none;
-}
-
-.fracao-visual .parte.preenchida {
-    background-color: var(--cor-ativa);
-}
-
-#enunciado-problema {
-    font-size: 2.5rem;
-    padding-bottom: 30px;
-}
-
-/* ESTILOS PARA O JOGO CAÇA-FORMAS */
-#opcoes-resposta.layout-objetos {
-    position: relative;
-    height: 350px;
-    border: 3px dashed var(--cor-ativa);
+.botao-acao-jogo {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #fff;
+    border: none;
     border-radius: 20px;
-    background-color: rgba(255, 255, 255, 0.5);
-    margin: 0 20px;
-}
-
-.forma-geometrica {
-    position: absolute;
+    padding: 10px 25px;
     cursor: pointer;
-    transition: transform 0.2s ease, opacity 0.3s ease;
+    transition: all 0.2s ease;
 }
 
-.forma-geometrica:hover {
-    transform: scale(1.1);
+#botao-ajuda {
+    background-color: #3498db;
 }
-
-.forma-geometrica.circulo {
-    border-radius: 50%;
+#botao-ajuda:hover {
+    background-color: #2980b9;
 }
-
-.forma-geometrica.triangulo {
-    background-color: transparent !important;
-    width: 0 !important;
-    height: 0 !important;
-    border-left: 45px solid transparent;
-    border-right: 45px solid transparent;
-    border-bottom: 80px solid;
-}
-
-.forma-geometrica.encontrado {
-    transform: scale(1.2);
-    opacity: 0.3;
+#botao-ajuda:disabled {
+    background-color: #bdc3c7;
     cursor: not-allowed;
 }
 
-/* ESTILOS PARA O JOGO DE RELÓGIO */
-#opcoes-resposta.layout-relogio {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
+#botao-pular {
+    background-color: #9b59b6;
+}
+#botao-pular:hover {
+    background-color: #8e44ad;
 }
 
-.relogio-container {
-    width: 300px;
-    height: 300px;
-}
-
-.relogio-face {
-    width: 100%;
-    height: 100%;
-    border: 8px solid var(--cor-ativa);
-    border-radius: 50%;
-    position: relative;
-    background-color: #fff;
-}
-
-.ponto-central {
-    width: 15px;
-    height: 15px;
-    background-color: #333;
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-}
-
-.ponteiro {
-    position: absolute;
-    bottom: 50%;
-    left: 50%;
-    transform-origin: bottom;
-    background-color: #333;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    cursor: grab;
-}
-.ponteiro:active {
-    cursor: grabbing;
-}
-
-#ponteiro-hora {
-    width: 6px;
-    height: 80px;
-    transform: translateX(-50%) rotate(0deg);
-}
-
-#ponteiro-minuto {
-    width: 4px;
-    height: 110px;
-    transform: translateX(-50%) rotate(0deg);
-    background-color: #555;
-}
-
-.relogio-face .numero {
-    position: absolute;
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: var(--cor-texto);
-}
-.numero-12 { top: 10px; left: 50%; transform: translateX(-50%); }
-.numero-3 { top: 50%; right: 10px; transform: translateY(-50%); }
-.numero-6 { bottom: 10px; left: 50%; transform: translateX(-50%); }
-.numero-9 { top: 50%; left: 10px; transform: translateY(-50%); }
-.numero-1 { top: 25px; right: 75px; }
-.numero-2 { top: 75px; right: 25px; }
-.numero-4 { bottom: 75px; right: 25px; }
-.numero-5 { bottom: 25px; right: 75px; }
-.numero-7 { bottom: 25px; left: 75px; }
-.numero-8 { bottom: 75px; left: 25px; }
-.numero-10 { top: 75px; left: 25px; }
-.numero-11 { top: 25px; left: 75px; }
-
-/* ESTILOS PARA O JOGO DESAFIO DO CAIXA */
-#opcoes-resposta.layout-dinheiro {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-}
-
-.container-caixa {
-    display: flex;
-    justify-content: space-around;
-    align-items: flex-start;
-    width: 100%;
-    gap: 20px;
-}
-
-.carteira {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    width: 50%;
-    padding: 10px;
-    background-color: #f0f0f0;
-    border-radius: 10px;
-}
-
-.dinheiro {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    cursor: grab;
-    border: 2px solid #333;
-    transition: transform 0.2s;
-}
-.dinheiro:active {
-    cursor: grabbing;
-}
-
-.nota {
-    width: 120px;
-    height: 55px;
-    border-radius: 5px;
-    background-color: #d1e7dd;
-    color: #0a3622;
-    font-size: 1.2rem;
-}
-
-.moeda {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #ffc107;
-    color: #664d03;
-    font-size: 1rem;
-}
-
-.bandeja-pagamento {
-    width: 45%;
-    min-height: 200px;
-    background-color: #fff;
-    border: 3px dashed var(--cor-ativa);
-    border-radius: 10px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-}
-
-.bandeja-pagamento .total-pago {
-    font-size: 1.5rem;
-    font-weight: bold;
-    padding: 5px 15px;
-    background-color: #e9ecef;
-    border-radius: 10px;
-    margin-bottom: 10px;
-}
-
-/* ESTILOS PARA O JOGO DE RESOLUÇÃO DE PROBLEMAS (KEYPAD) */
-#opcoes-resposta.layout-keypad {
-    display: flex;
-    justify-content: center;
-}
-#enunciado-problema p {
-    margin-top: 15px;
-    font-size: 1.8rem;
-    color: #555;
-}
-
-.container-keypad {
-    width: 300px;
-    border: 3px solid #ccc;
-    border-radius: 15px;
-    padding: 15px;
-    background-color: #f8f9fa;
-}
-
-.display-keypad {
-    width: 100%;
-    height: 60px;
-    background-color: #fff;
-    border-radius: 10px;
-    border: 2px solid #ddd;
-    margin-bottom: 15px;
-    font-size: 2.5rem;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 15px;
-    color: var(--cor-texto);
-}
-
-.botoes-keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-.botoes-keypad button {
-    font-family: 'Baloo 2', cursive;
-    height: 60px;
-    font-size: 2rem;
-    font-weight: bold;
-    border-radius: 10px;
-    border: none;
-    background-color: #fff;
-    box-shadow: 0 3px #ddd;
-    cursor: pointer;
-    transition: all 0.1s;
-}
-
-.botoes-keypad button:active {
-    transform: translateY(3px);
-    box-shadow: none;
-}
-
-.botoes-keypad button[data-key="ok"] {
-    background-color: var(--cor-sucesso);
-    color: #fff;
-    box-shadow: 0 3px #4a9b4a;
-}
-
-/* ESTILOS PARA O JOGO CLASSIFICADOR DE FRAÇÕES */
-#opcoes-resposta.layout-classificacao {
-    display: flex;
-    justify-content: center;
-}
-.container-classificacao {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 30px;
-    width: 100%;
-}
-.item-classificavel {
-    font-size: 4rem;
-    padding: 20px 30px;
-    background-color: var(--cor-secundaria);
-    color: #fff;
-    border-radius: 20px;
-    cursor: grab;
-    border-bottom: 5px solid #c79100;
-}
-.item-classificavel:active {
-    cursor: grabbing;
-}
-.caixas-destino {
-    display: flex;
-    gap: 20px;
-    width: 100%;
-}
-.caixa-classificacao {
-    flex: 1;
-    height: 150px;
-    border: 4px dashed #ccc;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s, border-color 0.2s;
-}
-.caixa-classificacao span {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #888;
-}
-.caixa-classificacao.drag-over {
-    background-color: #e0f7fa;
-    border-color: var(--cor-ativa);
-}
-
-/* ESTILOS PARA O JOGO BALANÇA DA EQUIVALÊNCIA */
-.balanca-container {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    margin-top: 20px;
-    width: 100%;
-}
-.pivo-balanca {
-    width: 20px;
-    height: 100px;
-    background-color: #8B4513;
-    position: relative;
-}
-.pivo-balanca::before {
-    content: '';
-    position: absolute;
-    bottom: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 25px solid transparent;
-    border-right: 25px solid transparent;
-    border-top: 25px solid #8B4513;
-}
-.prato-balanca {
-    width: 45%;
-    padding: 10px;
-    border-bottom: 8px solid #8B4513;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    font-size: 3rem;
-    font-weight: bold;
-    color: var(--cor-ativa);
-}
-.prato-balanca .fracao-visual {
-    width: 100%;
-    height: 40px;
-}
-.prato-balanca span {
-    font-size: 2.5rem;
-}
-
-#jogo-view[data-trilha="fracoes_equivalentes"] #opcoes-resposta {
-    position: relative;
-    top: -60px;
-    width: 45%;
-    margin-left: 50%;
-}
-
-/* ESTILOS PARA FIGURAS SÓLIDAS */
-#opcoes-resposta.layout-solido {
-    padding: 20px;
-    perspective: 1000px;
-}
-.container-solido {
-    width: 200px;
-    height: 200px;
-    margin: 20px auto;
-    position: relative;
-    transform-style: preserve-3d;
-    animation: girar-solido 15s infinite linear;
-}
-@keyframes girar-solido {
-    from { transform: rotateY(0deg) rotateX(10deg); }
-    to { transform: rotateY(360deg) rotateX(10deg); }
-}
-.solido > div {
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    background: hsla(197, 71%, 73%, 0.8);
-    border: 2px solid var(--cor-ativa);
-    box-sizing: border-box;
-}
-.cubo .frente  { transform: translateZ(100px); }
-.cubo .tras    { transform: rotateY(180deg) translateZ(100px); }
-.cubo .direita { transform: rotateY(90deg) translateZ(100px); }
-.cubo .esquerda{ transform: rotateY(-90deg) translateZ(100px); }
-.cubo .topo    { transform: rotateX(90deg) translateZ(100px); }
-.cubo .base    { transform: rotateX(-90deg) translateZ(100px); }
-
-.esfera {
-    width: 150px !important; height: 150px !important;
-    border-radius: 50%;
-    background: radial-gradient(circle at 50px 50px, #b3e5fc, var(--cor-ativa));
-    box-shadow: inset -25px -25px 40px rgba(0,0,0,0.3);
-}
-
-.cone, .cilindro { background: none !important; border: none !important; }
-.cone::before, .cone::after, .cilindro::before, .cilindro::after { content: ''; position: absolute; }
-.cone::before {
-    width: 150px; height: 50px; border-radius: 50%; background: #ccc; bottom: 20px; left: 25px;
-}
-.cone::after {
-    width: 0; height: 0; border-left: 75px solid transparent; border-right: 75px solid transparent;
-    border-bottom: 150px solid var(--cor-ativa); bottom: 45px; left: 25px;
-}
-.cilindro::before {
-    width: 150px; height: 50px; border-radius: 50%; background: #ccc; bottom: 20px; left: 25px;
-}
-.cilindro::after {
-    width: 150px; height: 130px; background: var(--cor-ativa); bottom: 45px; left: 25px;
-    border-radius: 10px;
-}
-
-/* ESTILOS PARA PERÍMETRO */
-.malha-perimetro {
-    display: grid;
-    margin: 20px auto;
-    width: 350px;
-    height: 350px;
-    border: 3px solid var(--cor-ativa);
-}
-.quadrado-malha {
-    border: 1px solid #bde0fe;
-    background-color: #e7f5ff;
-}
-
-/* ESTILOS PARA O ENUNCIADO DO JOGO DE TROCO */
-.enunciado-troco {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 1.6rem;
-    line-height: 1.4;
-}
-.enunciado-troco strong {
-    font-size: 1.8rem;
-}
-.enunciado-troco hr {
-    border: none;
-    border-top: 2px dashed #ccc;
-    margin: 5px 0;
-}
-
-/* ESTILOS REATORADOS PARA MALHAS GEOMÉTRICAS */
-.malha-geometrica {
-    display: grid;
-    margin: 20px auto;
-    width: 350px;
-    height: 350px;
-    border: 3px solid var(--cor-ativa);
-    box-sizing: border-box;
-}
-
-.malha-perimetro {
-    background-color: #e7f5ff;
-}
-
-.malha-perimetro .quadrado-malha {
-    border: 1px solid #bde0fe;
-}
-
-.malha-area .quadrado-malha.preenchido {
-    background-color: var(--cor-secundaria);
-    border: 1px solid #ffb007;
-}
-
-/* ESTILOS PARA ESTATÍSTICA (GRÁFICOS) */
-.container-grafico {
-    display: flex;
-    justify-content: space-around;
-    align-items: flex-end;
-    height: 250px;
-    width: 90%;
-    margin: 20px auto 0;
-    padding: 20px;
-    border-left: 5px solid #ccc;
-    border-bottom: 5px solid #ccc;
-}
-.barra-grafico {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-}
-.barra {
-    width: 60%;
-    background-color: var(--cor-ativa);
-    color: white;
-    font-size: 1.2rem;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    transition: height 0.5s ease-out;
-}
-.label-barra {
-    font-weight: bold;
-    color: #555;
-}
-
-/* ESTILOS PARA PROBABILIDADE (ROLETA) */
-.container-roleta {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-}
-.roleta {
-    width: 280px;
-    height: 280px;
-    border-radius: 50%;
-    border: 8px solid #333;
-    position: relative;
-    box-shadow: 0 0 15px rgba(0,0,0,0.3);
-}
-.seta-roleta {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-bottom: 30px solid #333;
-}
-
-/* ESTILOS PARA A TELA DE CONFIGURAÇÕES/LOGIN */
+/* Tela de Configurações/Login */
 #configuracoes-view h3 {
     font-size: 2rem;
     color: #555;
@@ -842,7 +292,7 @@ main { flex-grow: 1; padding-top: 20px; position: relative; overflow-y: auto; }
     color: #888;
 }
 
-/* ESTILOS PARA O PAINEL DO ADMINISTRADOR */
+/* Painel do Administrador */
 .admin-container {
     display: flex;
     flex-direction: column;
@@ -934,7 +384,7 @@ main { flex-grow: 1; padding-top: 20px; position: relative; overflow-y: auto; }
     font-size: 0.9rem;
 }
 
-/* ESTILOS PARA A LOJA */
+/* Loja */
 .item-loja {
     font-family: 'Baloo 2', cursive;
     background-color: #fff;
@@ -976,7 +426,6 @@ main { flex-grow: 1; padding-top: 20px; position: relative; overflow-y: auto; }
     margin-top: 15px;
 }
 
-/* Estilos para itens desabilitados ou comprados */
 .item-loja.desabilitado {
     cursor: not-allowed;
     background-color: #f0f0f0;
@@ -1004,4 +453,94 @@ main { flex-grow: 1; padding-top: 20px; position: relative; overflow-y: auto; }
     font-weight: bold;
     color: var(--cor-sucesso);
     margin-top: 15px;
+}
+
+/* Página de Perfil do Jogador */
+.perfil-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 50px;
+    padding: 20px;
+}
+
+.perfil-avatar-grande {
+    background-color: #fff;
+    border-radius: 50%;
+    padding: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+#avatar-display-perfil {
+    position: relative;
+    width: 180px;
+    height: 180px;
+}
+
+.avatar-layer-grande {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 11rem; /* 180px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+#avatar-cabeca-perfil {
+    transform: translateY(-15%);
+    z-index: 3;
+}
+
+#avatar-rosto-perfil {
+    z-index: 2;
+}
+
+#avatar-base-perfil {
+    z-index: 1;
+}
+
+#avatar-companheiro-perfil {
+    transform: translateX(-60%) scale(0.6);
+    z-index: 0;
+}
+
+.perfil-dados {
+    text-align: left;
+    width: 100%;
+    max-width: 350px;
+}
+
+.form-grupo {
+    margin-bottom: 20px;
+}
+
+.form-grupo label {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.form-grupo input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.2rem;
+    font-family: 'Baloo 2', cursive;
+    border: 3px solid #ccc;
+    border-radius: 10px;
+}
+
+#botao-salvar-perfil {
+    background-color: var(--cor-sucesso);
+    width: 100%;
+    padding: 15px;
+    font-size: 1.4rem;
+}
+#botao-salvar-perfil:hover {
+    background-color: #4a9b4a;
 }
