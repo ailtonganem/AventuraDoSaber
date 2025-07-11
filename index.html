@@ -60,7 +60,7 @@
                         <span>Ilha do Mundo</span>
                     </div>
                     <div class="ilha" id="ilha-ingles">
-                        <div class.="ilha-icone">🇬🇧</div>
+                        <div class="ilha-icone">🇬🇧</div>
                         <span>The English Island</span>
                     </div>
                 </div>
@@ -174,13 +174,25 @@
             </div>
 
         </main>
+
+        <!-- Estrutura do Sistema de Modal -->
+        <div id="modal-overlay" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3 id="modal-title"></h3>
+                </div>
+                <div class="modal-body">
+                    <p id="modal-text"></p>
+                    <input type="text" id="modal-input" style="display: none;">
+                </div>
+                <div id="modal-footer" class="modal-footer">
+                    <!-- Botões serão inseridos aqui pelo JavaScript -->
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- 
-      Todos os scripts foram removidos daqui.
-      O único ponto de entrada agora é o main.js, que será carregado como um módulo.
-      Isso organiza o código e é o primeiro passo para a modernização.
-    -->
     <script src="js/main.js" type="module"></script>
 
 </body>
