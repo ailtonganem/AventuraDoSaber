@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Aventura do Saber - Redirecionando...</title>
+    <script>
+      // Obtém o caminho da URL atual
+      var path = window.location.pathname;
+      
+      // Monta a nova URL redirecionando para o index.html
+      // e passando o caminho original como um parâmetro de consulta (query parameter)
+      var newUrl = '/AventuraDoSaber/?p=' + path.slice(1);
+      
+      // Redireciona para a nova URL
+      window.location.replace(newUrl);
+    </script>
+  </head>
+  <body>
+    <p>Se você não for redirecionado automaticamente, <a id="redirect-link" href="#">clique aqui</a>.</p>
+    <script>
+      // Atualiza o link de fallback para o caso do script falhar
+      document.getElementById('redirect-link').href = newUrl;
+    </script>
+  </body>
+</html>
