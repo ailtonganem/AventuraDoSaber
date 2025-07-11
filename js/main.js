@@ -19,11 +19,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             gerador: (trilha, atividade, idade) => {
                 if (trilha in JOGOS.operacoes.DADOS) return JOGOS.operacoes.gerarProblema(trilha, atividade, idade);
                 if (trilha in JOGOS.fracoes.DADOS) return JOGOS.fracoes.gerarProblema(trilha, atividade, idade);
-                // Adicionar chamadas para outros geradores de matemática aqui...
+                if (trilha in JOGOS.geometria.DADOS) return JOGOS.geometria.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.medidas.DADOS) return JOGOS.medidas.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.resolucao_problemas.DADOS) return JOGOS.resolucao_problemas.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.estatistica.DADOS) return JOGOS.estatistica.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.probabilidade.DADOS) return JOGOS.probabilidade.gerarProblema(trilha, atividade, idade);
                 return JOGOS.operacoes.gerarProblema(trilha, atividade, idade); // Fallback
             }
         },
-        // ... (outras matérias)
+        portugues: {
+            nome: "Ilha das Palavras", cor: "#c94c4c",
+            trilhas: { ...JOGOS.ortografia.DADOS },
+            gerador: (trilha, atividade) => JOGOS.ortografia.gerarProblema(trilha, atividade)
+        },
+        ciencias: {
+            nome: "Ilha das Descobertas", cor: "#4CAF50",
+            trilhas: { ...JOGOS.ciencias.DADOS },
+            gerador: (trilha, atividade) => JOGOS.ciencias.gerarProblema(trilha, atividade)
+        },
+        historia: {
+            nome: "Ilha do Tempo", cor: "#A0522D",
+            trilhas: { ...JOGOS.historia.DADOS },
+            gerador: (trilha, atividade) => JOGOS.historia.gerarProblema(trilha, atividade)
+        },
+        geografia: {
+            nome: "Ilha do Mundo", cor: "#20B2AA",
+            trilhas: { ...JOGOS.geografia.DADOS },
+            gerador: (trilha, atividade) => JOGOS.geografia.gerarProblema(trilha, atividade)
+        },
+        ingles: {
+            nome: "The English Island", cor: "#6f42c1",
+            trilhas: { ...JOGOS.ingles.DADOS },
+            gerador: (trilha, atividade) => JOGOS.ingles.gerarProblema(trilha, atividade)
+        }
     };
 
     // --- Elementos da DOM ---
@@ -75,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         atualizarPontosDisplay();
 
         // Atualiza o banco de dados em segundo plano
-        const userDocRef = doc(db, `artifacts/${appId}/users/${estado.usuarioAtual.id}/profile`, 'data');
+        const userDocRef = doc(db, `artifacts/${appId}/users/${estado.usuarioAtual.id}`);
         await updateDoc(userDocRef, { pontos: novosPontos });
     }
 
@@ -98,17 +126,16 @@ document.addEventListener('DOMContentLoaded', async () => {
              enunciadoEl.innerHTML = problema.enunciado;
         }
         
-        // ... (lógica de tipos de problema continua a mesma)
         gerarBotoesDeOpcao(problema.opcoes);
     }
 
     function gerarBotoesDeOpcao(opcoes) {
-        opcoesEl.innerHTML = ''; // Limpa opções anteriores
+        opcoesEl.innerHTML = '';
         const opcoesOrdenadas = [...opcoes].sort(() => Math.random() - 0.5);
         opcoesOrdenadas.forEach(opcao => {
             const botao = document.createElement('button');
             botao.className = 'botao-resposta';
-            botao.innerHTML = opcao; // Usar innerHTML para emojis
+            botao.innerHTML = opcao;
             botao.dataset.valor = opcao;
             botao.onclick = () => {
                 const acertou = botao.dataset.valor == estado.problemaAtual.respostaCorreta;
@@ -179,19 +206,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const novoUsuario = {
-            id: crypto.randomUUID(), // ID único
             nome: nome.trim(),
             idade: idade,
             pontos: 0,
             brindesComprados: []
         };
 
-        // Salva o novo usuário no Firestore
-        const userDocRef = doc(db, `artifacts/${appId}/users/${novoUsuario.id}/profile`, 'data');
-        await setDoc(userDocRef, novoUsuario);
-
+        await addDoc(collection(db, `artifacts/${appId}/users`), novoUsuario);
         mascoteFala(`Seja bem-vindo(a), ${nome.trim()}!`);
-        // O onSnapshot irá atualizar a UI automaticamente
     }
 
     function selecionarUsuario(id) {
@@ -232,7 +254,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     function renderizarAvatar() {
-        // ... (lógica de renderização do avatar continua a mesma)
+        avatarBaseEl.textContent = '🧑‍🎓';
+        avatarCabecaEl.textContent = '';
+        avatarRostoEl.textContent = '';
+        avatarCompanheiroEl.textContent = '';
+        document.body.style.backgroundImage = '';
+
+        if (!estado.usuarioAtual) {
+            avatarBaseEl.textContent = '🦉';
+            return;
+        }
+
+        estado.usuarioAtual.brindesComprados.forEach(brindeId => {
+            const brinde = estado.brindes.find(b => b.id === brindeId);
+            if (!brinde) return;
+
+            const emoji = (brinde.nome.match(/(\p{Emoji_Presentation})/gu) || [''])[0];
+
+            switch(brinde.slot) {
+                case 'base': avatarBaseEl.textContent = emoji; break;
+                case 'cabeca': avatarCabecaEl.textContent = emoji; break;
+                case 'rosto': avatarRostoEl.textContent = emoji; break;
+                case 'companheiro': avatarCompanheiroEl.textContent = emoji; break;
+                case 'fundo': 
+                    if (brinde.nome.includes('Estrelas')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #2c3e50, #4ca1af)';
+                    if (brinde.nome.includes('Submarino')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #0077be, #87ceeb)';
+                    if (brinde.nome.includes('Espacial')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #0f2027, #203a43, #2c5364)';
+                    break;
+            }
+        });
     }
 
     // --- Lógica da Loja com Firestore ---
@@ -241,15 +291,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const novosPontos = estado.usuarioAtual.pontos - brinde.custo;
             const novosBrindes = [...estado.usuarioAtual.brindesComprados, brinde.id];
 
-            // Atualiza estado local para UI imediata
             estado.usuarioAtual.pontos = novosPontos;
             estado.usuarioAtual.brindesComprados = novosBrindes;
             atualizarPontosDisplay();
             renderizarLoja();
             renderizarAvatar();
 
-            // Atualiza o banco de dados
-            const userDocRef = doc(db, `artifacts/${appId}/users/${estado.usuarioAtual.id}/profile`, 'data');
+            const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
             await updateDoc(userDocRef, {
                 pontos: novosPontos,
                 brindesComprados: novosBrindes
@@ -269,23 +317,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const novoBrinde = { id: Date.now(), nome, custo, tipo: 'custom', slot: 'rosto' };
         
-        // Adiciona o novo brinde no Firestore
         await addDoc(collection(db, `artifacts/${appId}/public/data/brindes`), novoBrinde);
 
         inputNomeBrindeEl.value = ''; inputCustoBrindeEl.value = '';
         mascoteFala("Novo brinde adicionado com sucesso!");
     }
 
-    async function removerBrinde(id) {
+    async function removerBrinde(firestoreId) {
         if (confirm("Tem certeza que deseja remover este brinde?")) {
-            await deleteDoc(doc(db, `artifacts/${appId}/public/data/brindes`, id));
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/brindes`, firestoreId));
             mascoteFala("Brinde removido.");
         }
     }
     
     async function removerUsuario(id) {
         if (confirm("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.")) {
-            await deleteDoc(doc(db, `artifacts/${appId}/users/${id}/profile`, 'data'));
+            await deleteDoc(doc(db, `artifacts/${appId}/users`, id));
             mascoteFala("Usuário removido.");
         }
     }
@@ -293,16 +340,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- Inicialização e Configuração do Firebase ---
     async function inicializarFirebase() {
         try {
-            // Usa as variáveis globais fornecidas pelo ambiente do Canvas
             appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
             
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            setLogLevel('debug'); // Para facilitar a depuração
+            setLogLevel('debug');
 
-            // Autentica o usuário
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
             } else {
@@ -311,7 +356,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             userId = auth.currentUser?.uid || crypto.randomUUID();
             console.log("Firebase inicializado e usuário autenticado:", userId);
 
-            // Inicia os listeners para carregar dados em tempo real
             iniciarListenersFirestore();
 
         } catch (error) {
@@ -321,52 +365,83 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function iniciarListenersFirestore() {
-        // Listener para a coleção de usuários
         const usersCollectionRef = collection(db, `artifacts/${appId}/users`);
         onSnapshot(usersCollectionRef, (snapshot) => {
             const usuariosTemp = [];
-            snapshot.forEach(userDoc => {
-                // Acessa o documento de perfil dentro da subcoleção de cada usuário
-                const profileCollectionRef = collection(db, `artifacts/${appId}/users/${userDoc.id}/profile`);
-                onSnapshot(profileCollectionRef, (profileSnapshot) => {
-                    profileSnapshot.forEach(profileDoc => {
-                        const userData = profileDoc.data();
-                        // Remove o usuário antigo se existir e adiciona o novo
-                        const index = usuariosTemp.findIndex(u => u.id === userData.id);
-                        if(index > -1) usuariosTemp[index] = userData;
-                        else usuariosTemp.push(userData);
-                    });
-                    estado.usuarios = usuariosTemp;
-                    renderizarPerfis();
-                    //renderizarUsuariosAdmin();
-                });
+            snapshot.forEach(doc => {
+                usuariosTemp.push({ ...doc.data(), id: doc.id });
             });
+            estado.usuarios = usuariosTemp;
+            renderizarPerfis();
+            renderizarUsuariosAdmin();
         });
 
-        // Listener para a coleção de brindes
         const brindesCollectionRef = collection(db, `artifacts/${appId}/public/data/brindes`);
         onSnapshot(brindesCollectionRef, (snapshot) => {
             const brindesTemp = [];
-            snapshot.forEach((doc) => {
-                brindesTemp.push({ ...doc.data(), firestoreId: doc.id });
-            });
+            if (snapshot.empty) {
+                // Se não houver brindes no DB, adiciona os padrões
+                CONFIG.BRINDES_PADRAO.forEach(async (brinde) => {
+                    await addDoc(brindesCollectionRef, brinde);
+                });
+                brindesTemp = CONFIG.BRINDES_PADRAO;
+            } else {
+                snapshot.forEach((doc) => {
+                    brindesTemp.push({ ...doc.data(), firestoreId: doc.id });
+                });
+            }
             estado.brindes = brindesTemp;
-            //renderizarBrindesAdmin();
+            renderizarBrindesAdmin();
             if (estado.viewAtual === 'loja-view') {
-                renderizarLoja(); // Atualiza a loja se estiver aberta
+                renderizarLoja();
             }
         });
     }
 
     // --- Ponto de Entrada da Aplicação ---
     async function inicializarApp() {
-        // ... (lógica de roteamento e eventos de clique)
+        const params = new URLSearchParams(window.location.search);
+        const path = params.get('p');
+        if (path) {
+            window.history.replaceState({}, document.title, "/" + path);
+        }
 
-        await inicializarFirebase(); // Espera o Firebase inicializar
-
-        // Eventos de clique e outras inicializações da UI
         document.getElementById('ilha-matematica').addEventListener('click', () => mostrarTrilhas('matematica'));
-        // ... outros eventos
+        document.getElementById('ilha-portugues').addEventListener('click', () => mostrarTrilhas('portugues'));
+        document.getElementById('ilha-ciencias').addEventListener('click', () => mostrarTrilhas('ciencias'));
+        document.getElementById('ilha-historia').addEventListener('click', () => mostrarTrilhas('historia'));
+        document.getElementById('ilha-geografia').addEventListener('click', () => mostrarTrilhas('geografia'));
+        document.getElementById('ilha-ingles').addEventListener('click', () => mostrarTrilhas('ingles'));
+        
+        document.getElementById('botao-configuracoes').addEventListener('click', () => {
+            tocarSom(somClique);
+            definirCorAtiva('#888');
+            estado.usuarioAtual = null;
+            atualizarPontosDisplay();
+            renderizarAvatar();
+            mostrarView('configuracoes-view');
+            mascoteFala("Vamos ver quem está pronto para a aventura!");
+        });
+        
+        botaoAddBrindeEl.addEventListener('click', adicionarBrinde);
+        botaoLojaEl.addEventListener('click', mostrarLoja);
+
+        botaoAjudaEl.addEventListener('click', async () => {
+            if (!estado.jogoAtivo || !estado.problemaAtual) return;
+            const dica = estado.problemaAtual.dica || "Nenhuma dica para esta questão.";
+            const custoDica = Math.round((estado.problemaAtual.pontos || 10) * 0.3);
+            mascoteFala(`Dica: ${dica} (Custo: ${custoDica} pontos)`);
+            await adicionarPontos(-custoDica);
+            botaoAjudaEl.disabled = true;
+        });
+
+        botaoPularEl.addEventListener('click', () => {
+            if (!estado.jogoAtivo) return;
+            mascoteFala("Ok, vamos pular esta. Próxima pergunta!");
+            gerarProblema();
+        });
+
+        await inicializarFirebase();
         
         mascoteFala("Olá! Bem-vindo(a) à Aventura do Saber!");
         renderizarAvatar();
