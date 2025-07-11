@@ -4,7 +4,7 @@
  * Responsável pela inicialização do Firebase, gerenciamento de estado, navegação
  * entre telas e lógica central do jogo.
  *
- * * Versão 2.0 - Refatorado para Módulos ES6 e arquitetura aprimorada.
+ * * Versão 2.1 - Correção do acesso a variáveis globais e do erro de inicialização.
  */
 
 // --- Módulos do Firebase ---
@@ -130,9 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
 
     const tocarSom = (som) => { som.currentTime = 0; som.play().catch(e => console.log("Erro ao tocar som:", e)); };
-    const mascoteFala = (texto) => { balaoFala.textContent = texto; };
+    const mascoteFala = (texto) => { if (balaoFala) balaoFala.textContent = texto; };
     const atualizarPontosDisplay = () => {
-        pontosDisplay.textContent = estado.usuarioAtual ? estado.usuarioAtual.pontos : 0;
+        if (pontosDisplay) pontosDisplay.textContent = estado.usuarioAtual ? estado.usuarioAtual.pontos : 0;
     };
     const definirCorAtiva = (cor) => { document.documentElement.style.setProperty('--cor-ativa', cor); };
 
@@ -177,7 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.onclick = () => {
                     modalOverlayEl.classList.remove('active');
                     if (config.showInput) {
-                        resolve(modalInputEl.value);
+                        // Resolve com o valor do input se o botão não for de cancelamento
+                        resolve(btnConfig.value === 'cancel' ? null : modalInputEl.value);
                     } else {
                         resolve(btnConfig.value);
                     }
@@ -290,9 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const botao = document.createElement('button');
             botao.className = 'botao-resposta';
             botao.innerHTML = opcao;
-            botao.dataset.valor = opcao;
+            botao.dataset.valor = String(opcao); // Garante que o valor seja string para comparação
             botao.onclick = () => {
-                const acertou = botao.dataset.valor == estado.problemaAtual.respostaCorreta;
+                const acertou = String(botao.dataset.valor) === String(estado.problemaAtual.respostaCorreta);
                 resolverProblema(acertou, botao);
             };
             opcoesEl.appendChild(botao);
@@ -320,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (botaoClicado) {
                 botaoClicado.classList.add('incorreta');
                 document.querySelectorAll('.botao-resposta').forEach(b => {
-                    if (b.dataset.valor == estado.problemaAtual.respostaCorreta) b.classList.add('correta');
+                    if (String(b.dataset.valor) === String(estado.problemaAtual.respostaCorreta)) b.classList.add('correta');
                 });
             }
         }
@@ -414,9 +415,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const avatarRostoPerfilEl = document.getElementById('avatar-rosto-perfil');
         const avatarCompanheiroPerfilEl = document.getElementById('avatar-companheiro-perfil');
 
-        avatarBaseEl.textContent = base;
-        avatarBasePerfilEl.textContent = base;
-        [avatarCabecaEl, avatarRostoEl, avatarCompanheiroEl, avatarCabecaPerfilEl, avatarRostoPerfilEl, avatarCompanheiroPerfilEl].forEach(el => el.textContent = '');
+        // Garante que os elementos existem antes de tentar acessá-los
+        if (avatarBaseEl) avatarBaseEl.textContent = base;
+        if (avatarBasePerfilEl) avatarBasePerfilEl.textContent = base;
+        
+        const elementsToClear = [
+            avatarCabecaEl, avatarRostoEl, avatarCompanheiroEl, 
+            avatarCabecaPerfilEl, avatarRostoPerfilEl, avatarCompanheiroPerfilEl
+        ];
+        elementsToClear.forEach(el => { if (el) el.textContent = ''; });
+        
         document.body.style.backgroundImage = '';
 
         if (!user) return;
@@ -428,20 +436,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             switch (brinde.slot) {
                 case 'base':
-                    avatarBaseEl.textContent = emoji;
-                    avatarBasePerfilEl.textContent = emoji;
+                    if (avatarBaseEl) avatarBaseEl.textContent = emoji;
+                    if (avatarBasePerfilEl) avatarBasePerfilEl.textContent = emoji;
                     break;
                 case 'cabeca':
-                    avatarCabecaEl.textContent = emoji;
-                    avatarCabecaPerfilEl.textContent = emoji;
+                    if (avatarCabecaEl) avatarCabecaEl.textContent = emoji;
+                    if (avatarCabecaPerfilEl) avatarCabecaPerfilEl.textContent = emoji;
                     break;
                 case 'rosto':
-                    avatarRostoEl.textContent = emoji;
-                    avatarRostoPerfilEl.textContent = emoji;
+                    if (avatarRostoEl) avatarRostoEl.textContent = emoji;
+                    if (avatarRostoPerfilEl) avatarRostoPerfilEl.textContent = emoji;
                     break;
                 case 'companheiro':
-                    avatarCompanheiroEl.textContent = emoji;
-                    avatarCompanheiroPerfilEl.textContent = emoji;
+                    if (avatarCompanheiroEl) avatarCompanheiroEl.textContent = emoji;
+                    if (avatarCompanheiroPerfilEl) avatarCompanheiroPerfilEl.textContent = emoji;
                     break;
                 case 'fundo':
                     if (brinde.nome.includes('Estrelas')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #2c3e50, #4ca1af)';
@@ -453,6 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderizarPerfis() {
+        if (!perfisContainerEl) return;
         perfisContainerEl.innerHTML = '';
         
         const adminButton = document.createElement('button');
@@ -465,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         estado.usuarios.forEach(usuario => {
             const perfilButton = document.createElement('button');
             perfilButton.className = 'botao-perfil';
-            perfilButton.innerHTML = `<span class="perfil-icone">${usuario.avatar || '🧑‍🎓'}</span><span class="perfil-nome">${usuario.nome}</span>`;
+            perfilButton.innerHTML = `<span class="perfil-icone">${usuario.avatar || '🧑‍�'}</span><span class="perfil-nome">${usuario.nome}</span>`;
             perfilButton.addEventListener('click', () => selecionarUsuario(usuario.id));
             perfisContainerEl.appendChild(perfilButton);
         });
@@ -486,17 +495,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const idadeInput = await exibirPrompt(`Olá, ${nome.trim()}! Quantos anos você tem?`, "Idade");
+        if (idadeInput === null) return; // Cancelado
         const idade = parseInt(idadeInput, 10);
         if (isNaN(idade) || idade < 4 || idade > 12) {
-            mascoteFala("Por favor, insira uma idade válida (entre 4 e 12 anos).");
+            mascoteFala("Por favor, insira uma idade válida entre 4 e 12 anos.");
+            await exibirAlerta("Idade inválida. Por favor, insira um número entre 4 e 12.");
             return;
         }
 
         const generoInput = await exibirPrompt("Para o seu avatar, você escolhe 'menino' ou 'menina'?", "Avatar");
-        if (generoInput === null) return; // Usuário cancelou
+        if (generoInput === null) return; // Cancelado
         const genero = generoInput.toLowerCase();
         if (genero !== 'menino' && genero !== 'menina') {
             mascoteFala("Por favor, escolha 'menino' ou 'menina'.");
+            await exibirAlerta("Opção inválida. Por favor, digite 'menino' ou 'menina'.");
             return;
         }
 
@@ -588,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             item.innerHTML = `
                 <div class="item-loja-icone">${icone}</div>
-                <div class="item-loja-nome">${brinde.nome.replace(/(\p{Emoji_Presentation})/gu, '').trim()}</div>
+                <div class="item-loja-nome">${brinde.nome.replace(/(\p{Emoji_Presentation}|\p{Emoji_Modifier_Base}|\p{Emoji_Modifier})/gu, '').trim()}</div>
                 <div class="item-loja-custo">⭐ ${brinde.custo}</div>
             `;
 
@@ -642,8 +654,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = document.createElement('div');
             item.className = 'item-lista-admin';
             item.innerHTML = `
-                <span>${brinde.nome} (Custo: ⭐ ${brinde.custo})</span>
-                <button data-id="${brinde.firestoreId}">Remover</button>
+                <span>${brinde.nome}</span>
+                <div>
+                    <span class="custo-brinde">⭐ ${brinde.custo}</span>
+                    <button data-id="${brinde.firestoreId}">Remover</button>
+                </div>
             `;
             item.querySelector('button').addEventListener('click', () => removerBrinde(brinde.firestoreId));
             listaBrindesAdminEl.appendChild(item);
@@ -698,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
+    
     async function removerUsuario(id) {
         if (await exibirConfirmacao("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.", "Remover Usuário")) {
             try {
@@ -717,10 +732,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function inicializarFirebase() {
         try {
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
+            const firebaseConfigStr = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : '{}';
             
-            if (!firebaseConfigStr || firebaseConfigStr === '{}') {
+            if (!firebaseConfigStr || firebaseConfigStr === '{}' || firebaseConfigStr === '{{ an_firebase_config }}') {
                 throw new Error("Configuração do Firebase não fornecida ou inválida.");
             }
             
@@ -735,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
             auth = getAuth(app);
             setLogLevel('debug');
 
-            const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            const authToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
             if (authToken) {
                 await signInWithCustomToken(auth, authToken);
             } else {
@@ -750,12 +765,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("ERRO CRÍTICO AO INICIALIZAR FIREBASE:", error);
-            mascoteFala("Erro de conexão! Não consigo salvar seu progresso.");
+            if (balaoFala) mascoteFala("Erro de conexão! Não consigo salvar seu progresso.");
             document.body.innerHTML = `<div style="text-align: center; padding: 50px; font-family: sans-serif; color: red;"><h1>Erro de Conexão</h1><p>Não foi possível conectar ao servidor do jogo. Por favor, recarregue a página.</p><p><i>Detalhe do erro: ${error.message}</i></p></div>`;
         }
     }
 
     function iniciarListenersFirestore() {
+        // Listener para a coleção de usuários
         const usersCollectionRef = collection(db, `artifacts/${appId}/users`);
         onSnapshot(usersCollectionRef, (snapshot) => {
             const usuariosTemp = [];
@@ -772,6 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mascoteFala("Problema ao carregar os perfis.");
         });
 
+        // Listener para a coleção de brindes
         const brindesCollectionRef = collection(db, `artifacts/${appId}/public/data/brindes`);
         onSnapshot(brindesCollectionRef, (snapshot) => {
             let brindesTemp = [];
@@ -796,7 +813,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /**
+     * Ponto de entrada da aplicação. Configura os event listeners iniciais.
+     */
     async function inicializarApp() {
+        // Adiciona a estrutura do modal ao corpo do documento
+        const modalHTML = `
+            <div id="modal-overlay" class="modal-overlay">
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h3 id="modal-title"></h3>
+                    </div>
+                    <div class="modal-body">
+                        <p id="modal-text"></p>
+                        <input type="text" id="modal-input" style="display: none;">
+                    </div>
+                    <div id="modal-footer" class="modal-footer"></div>
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Inicializa o Firebase primeiro
+        await inicializarFirebase();
+
+        // Se a inicialização falhar, o código abaixo não será executado
+        // pois a função `inicializarFirebase` irá parar a execução e mostrar um erro.
+        
+        // Configura a navegação pelas ilhas
         document.getElementById('ilha-matematica').addEventListener('click', () => mostrarTrilhas('matematica'));
         document.getElementById('ilha-portugues').addEventListener('click', () => mostrarTrilhas('portugues'));
         document.getElementById('ilha-ciencias').addEventListener('click', () => mostrarTrilhas('ciencias'));
@@ -804,10 +847,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ilha-geografia').addEventListener('click', () => mostrarTrilhas('geografia'));
         document.getElementById('ilha-ingles').addEventListener('click', () => mostrarTrilhas('ingles'));
         
+        // Configura botões do HUD
         document.getElementById('botao-configuracoes').addEventListener('click', () => {
             tocarSom(somClique);
             definirCorAtiva('#888');
-            estado.usuarioAtual = null;
+            estado.usuarioAtual = null; // Desloga o usuário
             atualizarPontosDisplay();
             renderizarAvatar();
             mostrarView('configuracoes-view');
@@ -830,6 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mascoteFala("Aqui você pode ver e editar seu perfil!");
         });
         
+        // Configura botões de ação
         botaoAddBrindeEl.addEventListener('click', adicionarBrinde);
         botaoSalvarPerfilEl.addEventListener('click', salvarPerfil);
         botaoAjudaEl.addEventListener('click', async () => {
@@ -846,6 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gerarProblema();
         });
 
+        // Delegação de eventos para os botões de "voltar"
         document.body.addEventListener('click', (e) => {
             if (e.target.classList.contains('botao-voltar')) {
                 tocarSom(somClique);
@@ -872,8 +918,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-
-        await inicializarFirebase();
         
         mascoteFala("Olá! Bem-vindo(a) à Aventura do Saber!");
         renderizarAvatar();
