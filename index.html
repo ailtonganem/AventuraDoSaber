@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- A tag <base> define a URL base para todos os caminhos relativos na página. -->
+    <!-- Substitua 'AventuraDoSaber' pelo nome exato do seu repositório no GitHub, se for diferente. -->
+    <base href="/AventuraDoSaber/">
+    
     <title>Aventura do Saber</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,9 +89,19 @@
             <div id="jogo-view" class="view">
                 <button class="botao-voltar" id="voltar-para-atividades">⬅</button>
                 <h2 id="titulo-jogo"></h2>
+                
+                <div id="info-problema-container">
+                    <div id="pontos-problema"></div>
+                </div>
+
                 <div id="container-problema">
                     <div id="enunciado-problema"></div>
                     <div id="opcoes-resposta"></div>
+                </div>
+
+                <div id="acoes-problema-container">
+                    <button id="botao-ajuda" class="botao-acao-jogo">💡 Ajuda</button>
+                    <button id="botao-pular" class="botao-acao-jogo">⏭️ Pular</button>
                 </div>
             </div>
 
@@ -145,7 +159,6 @@
     <script src="js/matematica/estatistica.js"></script>
     <script src="js/matematica/probabilidade.js"></script>
     <script src="js/portugues/ortografia.js"></script>
-    <!-- Novos Módulos -->
     <script src="js/historia.js"></script>
     <script src="js/geografia.js"></script>
     <script src="js/ciencias.js"></script>
