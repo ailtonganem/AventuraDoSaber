@@ -172,7 +172,7 @@
                     </div>
                 </div>
             </div>
-
+            
         </main>
 
         <!-- Estrutura do Sistema de Modal -->
@@ -190,9 +190,18 @@
                 </div>
             </div>
         </div>
-
     </div>
 
+    <!-- Script de configuração do Firebase -->
+    <script>
+        // Passa as variáveis de configuração do ambiente para o escopo global (window)
+        // para que possam ser acessadas pelo módulo JavaScript.
+        window.firebaseConfig = `{{ an_firebase_config }}`;
+        window.appId = `{{ app_id }}`;
+        window.authToken = `{{ auth_token }}`;
+    </script>
+    
+    <!-- Script principal da aplicação como módulo -->
     <script src="js/main.js" type="module"></script>
 
 </body>
