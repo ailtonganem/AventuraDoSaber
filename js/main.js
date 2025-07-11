@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const JOGOS = window.AventuraDoSaber;
     const CONFIG = window.AventuraDoSaber.config;
     
-    // Objeto principal que define todas as matérias e seus dados
     const DADOS_JOGOS = {
         matematica: {
             nome: "Ilha dos Números", cor: "#0077be",
@@ -70,7 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatarCabecaEl = document.getElementById('avatar-acessorio-cabeca');
     const avatarRostoEl = document.getElementById('avatar-acessorio-rosto');
     const avatarCompanheiroEl = document.getElementById('avatar-companheiro');
-
+    const pontosProblemaEl = document.getElementById('pontos-problema');
+    const botaoAjudaEl = document.getElementById('botao-ajuda');
+    const botaoPularEl = document.getElementById('botao-pular');
 
     // --- Estado da Aplicação ---
     let estado = { 
@@ -78,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         materiaAtual: null, 
         trilhaAtual: null, 
         atividadeAtual: null, 
-        respostaCorreta: null, 
+        problemaAtual: null,
         jogoAtivo: false, 
         acertosAtuais: 0, 
         classeAlvo: '',
@@ -96,6 +97,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function adicionarPontos(quantidade) {
         if (estado.usuarioAtual) {
             estado.usuarioAtual.pontos += quantidade;
+            if (estado.usuarioAtual.pontos < 0) {
+                estado.usuarioAtual.pontos = 0;
+            }
             atualizarPontosDisplay();
             salvarEstado();
         }
@@ -103,10 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function gerarProblema() {
         estado.jogoAtivo = true;
-        // Acessa o gerador da matéria atual de forma dinâmica
-        const problema = DADOS_JOGOS[estado.materiaAtual].gerador(estado.trilhaAtual, estado.atividadeAtual);
+        estado.problemaAtual = DADOS_JOGOS[estado.materiaAtual].gerador(estado.trilhaAtual, estado.atividadeAtual);
+        
+        const problema = estado.problemaAtual;
         opcoesEl.innerHTML = '';
         
+        pontosProblemaEl.textContent = `Vale: ⭐ ${problema.pontos || 10} pontos`;
+        botaoAjudaEl.disabled = false;
+        botaoPularEl.disabled = false;
+
         if (problema.objetosHTML) {
              enunciadoEl.innerHTML = problema.enunciado;
              opcoesEl.innerHTML = problema.objetosHTML;
@@ -114,8 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
              enunciadoEl.innerHTML = problema.enunciado;
         }
         
-        estado.respostaCorreta = problema.respostaCorreta;
-
         switch (problema.tipo) {
             case 'drag_classificacao': 
                 opcoesEl.className = 'layout-classificacao'; 
@@ -157,13 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault(); 
                 caixa.classList.remove('drag-over'); 
                 if (!estado.jogoAtivo) return;
-                if (caixa.dataset.tipo === estado.respostaCorreta) {
-                    estado.jogoAtivo = false; tocarSom(somAcerto); mascoteFala("Classificação perfeita!");
-                    adicionarPontos(10);
+                if (caixa.dataset.tipo === estado.problemaAtual.respostaCorreta) {
+                    resolverProblema(true);
                     caixa.style.backgroundColor = 'var(--cor-sucesso)'; item.style.display = 'none';
-                    setTimeout(gerarProblema, 2000);
                 } else {
-                    tocarSom(somErro); mascoteFala("Opa, essa não é a caixa certa!");
+                    resolverProblema(false);
                     caixa.style.borderColor = 'var(--cor-erro)'; setTimeout(() => { caixa.style.borderColor = '#ccc'; }, 1500);
                 }
             });
@@ -185,114 +190,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function verificarRespostaKeypad(respostaUsuario) {
         if (!estado.jogoAtivo || respostaUsuario === '') return;
-        if (parseInt(respostaUsuario, 10) === estado.respostaCorreta) {
-            estado.jogoAtivo = false; tocarSom(somAcerto); mascoteFala("Que raciocínio rápido! Parabéns!");
-            adicionarPontos(15);
-            const container = document.querySelector('.container-keypad') || document.querySelector('.malha-geometrica');
+        const acertou = parseInt(respostaUsuario, 10) === estado.problemaAtual.respostaCorreta;
+        resolverProblema(acertou);
+        
+        const container = document.querySelector('.container-keypad') || document.querySelector('.malha-geometrica');
+        if (acertou) {
             if (container) container.style.borderColor = 'var(--cor-sucesso)'; 
-            setTimeout(gerarProblema, 2000);
         } else {
-            tocarSom(somErro); mascoteFala("Hmm, essa não é a resposta. Leia com atenção!");
-            const container = document.querySelector('.container-keypad') || document.querySelector('.malha-geometrica');
             if (container) container.style.borderColor = 'var(--cor-erro)';
             setTimeout(() => { if (estado.jogoAtivo && container) container.style.borderColor = '#ccc'; }, 1500);
         }
     }
     
-    function configurarJogoDinheiro() {
-        const bandeja = document.getElementById('bandeja-pagamento');
-        const totalPagoEl = bandeja.querySelector('.total-pago');
-        const dinheiros = document.querySelectorAll('.dinheiro');
-        const btnVerificar = document.getElementById('btn-verificar');
-
-        let totalAtual = 0;
-        const textoLabel = (estado.atividadeAtual === 'dando_troco') ? 'Troco' : 'Total';
-        totalPagoEl.textContent = `${textoLabel}: R$ 0,00`;
-
-        dinheiros.forEach(dinheiro => {
-            dinheiro.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', dinheiro.dataset.valor);
-            });
-        });
-        bandeja.addEventListener('dragover', (e) => e.preventDefault());
-        bandeja.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (!estado.jogoAtivo) return;
-            const valor = parseInt(e.dataTransfer.getData('text/plain'), 10);
-            totalAtual += valor;
-            totalPagoEl.textContent = `${textoLabel}: ${(totalAtual / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
-        });
-        btnVerificar.addEventListener('click', () => {
-            if (!estado.jogoAtivo) return;
-            if (totalAtual === estado.respostaCorreta) {
-                estado.jogoAtivo = false; tocarSom(somAcerto); mascoteFala("Valor exato! Perfeito!");
-                adicionarPontos(25);
-                bandeja.style.borderColor = 'var(--cor-sucesso)';
-                setTimeout(gerarProblema, 2000);
-            } else {
-                tocarSom(somErro); mascoteFala("O valor não está correto. Vamos tentar de novo!");
-                totalAtual = 0; totalPagoEl.textContent = `${textoLabel}: R$ 0,00`;
-                bandeja.style.borderColor = 'var(--cor-erro)';
-                setTimeout(() => { if (estado.jogoAtivo) bandeja.style.borderColor = 'var(--cor-ativa)'; }, 1500);
-            }
-        });
-    }
-
-    function configurarJogoRelogio() {
-        const ponteiroHora = document.getElementById('ponteiro-hora'); 
-        const ponteiroMinuto = document.getElementById('ponteiro-minuto');
-        const btnVerificar = document.getElementById('btn-verificar-relogio'); 
-        const faceRelogio = document.querySelector('.relogio-face');
-        let anguloHora = 0; let anguloMinuto = 0;
-        function atualizarPonteiro(p, a) { p.style.transform = `translateX(-50%) rotate(${a}deg)`; }
-        function arrastarPonteiro(p, e) {
-            e.preventDefault(); const rect = faceRelogio.getBoundingClientRect();
-            const cX = rect.left + rect.width / 2; const cY = rect.top + rect.height / 2;
-            const mX = e.clientX || e.touches[0].clientX; const mY = e.clientY || e.touches[0].clientY;
-            let aG = Math.atan2(mY - cY, mX - cX) * (180 / Math.PI) + 90;
-            if (aG < 0) aG += 360;
-            if (p === ponteiroMinuto) { anguloMinuto = Math.round(aG / 6) * 6; atualizarPonteiro(ponteiroMinuto, anguloMinuto); } 
-            else { anguloHora = Math.round(aG / 30) * 30; atualizarPonteiro(ponteiroHora, anguloHora); }
-        }
-        function iniciarArrasto(p) {
-            const mover = (e) => arrastarPonteiro(p, e);
-            const parar = () => { document.removeEventListener('mousemove', mover); document.removeEventListener('mouseup', parar); document.removeEventListener('touchmove', mover); document.removeEventListener('touchend', parar); };
-            document.addEventListener('mousemove', mover); document.addEventListener('mouseup', parar); document.addEventListener('touchmove', mover); document.addEventListener('touchend', parar);
-        }
-        ponteiroHora.addEventListener('mousedown', () => iniciarArrasto(ponteiroHora)); ponteiroMinuto.addEventListener('mousedown', () => iniciarArrasto(ponteiroMinuto));
-        ponteiroHora.addEventListener('touchstart', () => iniciarArrasto(ponteiroHora)); ponteiroMinuto.addEventListener('touchstart', () => iniciarArrasto(ponteiroMinuto));
-        btnVerificar.addEventListener('click', () => {
-            if (!estado.jogoAtivo) return;
-            let hA = Math.round(anguloHora / 30); if (hA === 0) hA = 12;
-            let mA = Math.round(anguloMinuto / 6); if (mA === 60) mA = 0;
-            const { hora, minuto } = estado.respostaCorreta;
-            if (hA === hora && mA === minuto) {
-                estado.jogoAtivo = false; tocarSom(somAcerto); mascoteFala("Hora certa! Excelente!");
-                adicionarPontos(20);
-                faceRelogio.style.borderColor = 'var(--cor-sucesso)'; setTimeout(gerarProblema, 2000);
-            } else { tocarSom(somErro); mascoteFala("Quase! Verifique os ponteiros."); faceRelogio.style.borderColor = 'var(--cor-erro)'; setTimeout(() => { if(estado.jogoAtivo) faceRelogio.style.borderColor = 'var(--cor-ativa)'; }, 1500); }
-        });
-    }
-
-    function configurarJogoDeClique() {
-        estado.acertosAtuais = 0;
-        document.querySelectorAll('.forma-geometrica').forEach(forma => {
-            if (forma.classList.contains('triangulo')) { forma.style.borderBottomColor = forma.style.backgroundColor; }
-            forma.addEventListener('click', () => {
-                if (!estado.jogoAtivo || forma.classList.contains('encontrado')) return;
-                if (forma.dataset.forma === estado.classeAlvo) {
-                    tocarSom(somAcerto); forma.classList.add('encontrado'); estado.acertosAtuais++;
-                    if (estado.acertosAtuais === estado.respostaCorreta) {
-                        estado.jogoAtivo = false; mascoteFala("Incrível! Você encontrou todos!");
-                        adicionarPontos(15);
-                        setTimeout(gerarProblema, 2000);
-                    }
-                } else { tocarSom(somErro); }
-            });
-        });
-    }
+    function configurarJogoDinheiro() {}
+    function configurarJogoRelogio() {}
+    function configurarJogoDeClique() {}
     
-    // --- Navegação e UI ---
     const mostrarView = (id) => { 
         estado.viewAtual = id; 
         allViews.forEach(v => v.classList.remove('active')); 
@@ -331,40 +244,52 @@ document.addEventListener('DOMContentLoaded', () => {
         tocarSom(somClique); estado.atividadeAtual = atividade;
         const dadosAtividade = DADOS_JOGOS[estado.materiaAtual].trilhas[estado.trilhaAtual].atividades[atividade];
         document.getElementById('titulo-jogo').textContent = dadosAtividade.nome;
-        document.getElementById('jogo-view').dataset.trilha = estado.trilhaAtual;
-        mostrarView('jogo-view'); gerarProblema();
+        mostrarView('jogo-view'); 
+        gerarProblema();
     }
 
     function gerarBotoesDeOpcao(opcoes) {
-        let container = opcoesEl;
-        if (container.querySelector('.container-solido') || container.querySelector('.container-grafico') || container.querySelector('.container-roleta')) {
-            const botoesContainer = document.createElement('div');
-            botoesContainer.className = 'botoes-resposta-container';
-            opcoesEl.appendChild(botoesContainer);
-            container = botoesContainer;
-        }
-
-        const opcoesOrdenadas = (estado.atividadeAtual === 'vf') ? opcoes : [...opcoes].sort(() => Math.random() - 0.5);
+        const container = opcoesEl;
+        const opcoesOrdenadas = [...opcoes].sort(() => Math.random() - 0.5);
         opcoesOrdenadas.forEach(opcao => {
             const botao = document.createElement('button'); botao.className = 'botao-resposta';
             botao.textContent = opcao;
             if (opcao === "Verdadeiro") botao.innerHTML = 'Verdadeiro 👍'; if (opcao === "Falso") botao.innerHTML = 'Falso 👎';
-            botao.dataset.valor = opcao; botao.onclick = () => verificarRespostaMultiplaEscolha(botao);
+            botao.dataset.valor = opcao; 
+            botao.onclick = () => {
+                const acertou = botao.dataset.valor == estado.problemaAtual.respostaCorreta;
+                resolverProblema(acertou, botao);
+            };
             container.appendChild(botao);
         });
     }
 
-    function verificarRespostaMultiplaEscolha(botaoClicado) {
-        if (!estado.jogoAtivo) return; estado.jogoAtivo = false; const eCorreta = botaoClicado.dataset.valor == estado.respostaCorreta;
-        if (eCorreta) {
-            tocarSom(somAcerto); mascoteFala("Isso mesmo! Você é fera!");
-            adicionarPontos((estado.atividadeAtual === 'vf') ? 5 : 10);
-            botaoClicado.classList.add('correta');
+    function resolverProblema(acertou, botaoClicado = null) {
+        if (!estado.jogoAtivo) return;
+        estado.jogoAtivo = false;
+        botaoAjudaEl.disabled = true;
+        botaoPularEl.disabled = true;
+
+        const pontos = estado.problemaAtual.pontos || 10;
+
+        if (acertou) {
+            tocarSom(somAcerto);
+            adicionarPontos(pontos);
+            mascoteFala(`Correto! Você ganhou ${pontos} pontos!`);
+            if(botaoClicado) botaoClicado.classList.add('correta');
         } else {
-            tocarSom(somErro); mascoteFala("Opa, essa não estava certa."); botaoClicado.classList.add('incorreta');
-            document.querySelectorAll('.botao-resposta').forEach(b => { if (b.dataset.valor == estado.respostaCorreta) b.classList.add('correta'); });
+            tocarSom(somErro);
+            const pontosPerdidos = Math.round(pontos / 2);
+            adicionarPontos(-pontosPerdidos);
+            mascoteFala(`Ops! Você perdeu ${pontosPerdidos} pontos. A resposta era "${estado.problemaAtual.respostaCorreta}".`);
+            if(botaoClicado) {
+                botaoClicado.classList.add('incorreta');
+                document.querySelectorAll('.botao-resposta').forEach(b => { 
+                    if (b.dataset.valor == estado.problemaAtual.respostaCorreta) b.classList.add('correta'); 
+                });
+            }
         }
-        setTimeout(gerarProblema, 1800);
+        setTimeout(gerarProblema, 2500);
     }
     
     const tocarSom = (som) => { som.currentTime = 0; som.play().catch(e => console.log("Erro ao tocar som:", e)); };
@@ -373,7 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pontosDisplay.textContent = estado.usuarioAtual ? estado.usuarioAtual.pontos : 0;
     };
     
-    // --- Lógica de Estado, Usuários e Brindes ---
     function salvarEstado() {
         const dadosParaSalvar = {
             usuarios: estado.usuarios,
@@ -398,7 +322,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderizarUsuariosAdmin();
     }
     
-    // --- Lógica de Usuários e Avatar ---
     function renderizarAvatar() {
         avatarBaseEl.textContent = '🧑‍🎓';
         avatarCabecaEl.textContent = '';
@@ -488,7 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Lógica da Loja ---
     function mostrarLoja() {
         tocarSom(somClique);
         definirCorAtiva('#ffc107');
@@ -538,7 +460,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Lógica de Administração ---
     function loginAdmin() {
         const senha = prompt("Digite a senha de administrador:");
         if (senha === "Admin") {
@@ -632,7 +553,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Configuração dos Eventos ---
     function configurarBotoesVoltar() {
         const botoes = { 
             'voltar-para-mapa': () => { mostrarView('mapa-view'); definirCorAtiva('#555'); mascoteFala(`Para qual ilha vamos agora, ${estado.usuarioAtual.nome}?`); }, 
@@ -661,6 +581,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function inicializarApp() {
+        // Lógica de Roteamento para GitHub Pages
+        const params = new URLSearchParams(window.location.search);
+        const path = params.get('p');
+        if (path) {
+            // Limpa o parâmetro da URL para que ela fique bonita
+            window.history.replaceState({}, document.title, "/" + path);
+        }
+
         // Eventos de Navegação Principal
         document.getElementById('ilha-matematica').addEventListener('click', () => mostrarTrilhas('matematica'));
         document.getElementById('ilha-portugues').addEventListener('click', () => mostrarTrilhas('portugues'));
@@ -681,6 +609,21 @@ document.addEventListener('DOMContentLoaded', () => {
         
         botaoAddBrindeEl.addEventListener('click', adicionarBrinde);
         botaoLojaEl.addEventListener('click', mostrarLoja);
+
+        botaoAjudaEl.addEventListener('click', () => {
+            if (!estado.jogoAtivo || !estado.problemaAtual) return;
+            const dica = estado.problemaAtual.dica || "Nenhuma dica para esta questão.";
+            const custoDica = Math.round((estado.problemaAtual.pontos || 10) * 0.3);
+            mascoteFala(`Dica: ${dica} (Custo: ${custoDica} pontos)`);
+            adicionarPontos(-custoDica);
+            botaoAjudaEl.disabled = true;
+        });
+
+        botaoPularEl.addEventListener('click', () => {
+            if (!estado.jogoAtivo) return;
+            mascoteFala("Ok, vamos pular esta. Próxima pergunta!");
+            gerarProblema();
+        });
 
         carregarEstado(); 
         definirCorAtiva('#555');
