@@ -91,8 +91,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
     
+    // ==========================================================================
     // --- DECLARAÇÃO DE FUNÇÕES ---
     // (Todas as funções são declaradas aqui antes de serem chamadas)
+    // ==========================================================================
 
     const tocarSom = (som) => { som.currentTime = 0; som.play().catch(e => console.log("Erro ao tocar som:", e)); };
     const mascoteFala = (texto) => { balaoFala.textContent = texto; };
@@ -242,7 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderizarAvatar() {
-        const avatarBase = (estado.usuarioAtual && estado.usuarioAtual.avatar) ? estado.usuarioAtual.avatar : '🦉';
+        const avatarBase = (estado.usuarioAtual && estado.usuarioAtual.avatar) ? estado.usuarioAtual.avatar : '�';
         avatarBaseEl.textContent = avatarBase;
         avatarCabecaEl.textContent = '';
         avatarRostoEl.textContent = '';
