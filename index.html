@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- A tag <base> define a URL base para todos os caminhos relativos na página. -->
-    <!-- Substitua 'AventuraDoSaber' pelo nome exato do seu repositório no GitHub, se for diferente. -->
     <base href="/AventuraDoSaber/">
     
     <title>Aventura do Saber</title>
@@ -150,7 +148,25 @@
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts do Firebase (Adicionados) -->
+    <script type="module">
+        // Importa as funções necessárias dos SDKs do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      
+        // Disponibiliza as funções globalmente para que o main.js possa usá-las
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            getFirestore,
+            setLogLevel
+        };
+    </script>
+
+    <!-- Scripts do Jogo -->
     <script src="js/matematica/operacoes.js"></script>
     <script src="js/matematica/fracoes.js"></script>
     <script src="js/matematica/geometria.js"></script>
