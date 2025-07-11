@@ -8,8 +8,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { getAuth, signInAnonymously, signInWithCustomToken } = window.firebase;
     const { getFirestore, setLogLevel, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } = window.firebase.firestore;
 
-    // --- Variáveis Globais do Firebase ---
+    // --- Variáveis Globais ---
     let auth, db, userId, appId;
+    let estado = { 
+        viewAtual: 'configuracoes-view', 
+        materiaAtual: null, 
+        trilhaAtual: null, 
+        atividadeAtual: null, 
+        problemaAtual: null,
+        jogoAtivo: false, 
+        usuarioAtual: null,
+        usuarios: [],
+        brindes: [] 
+    };
+
+    // --- Elementos da DOM ---
+    const allViews = document.querySelectorAll('.view');
+    const pontosDisplay = document.getElementById('pontos-display');
+    const balaoFala = document.getElementById('balao-fala');
+    const enunciadoEl = document.getElementById('enunciado-problema');
+    const opcoesEl = document.getElementById('opcoes-resposta');
+    const listaBrindesAdminEl = document.getElementById('lista-brindes-admin');
+    const inputNomeBrindeEl = document.getElementById('input-nome-brinde');
+    const inputCustoBrindeEl = document.getElementById('input-custo-brinde');
+    const botaoAddBrindeEl = document.getElementById('botao-add-brinde');
+    const perfisContainerEl = document.querySelector('.perfis-container');
+    const listaUsuariosAdminEl = document.getElementById('lista-usuarios-admin');
+    const botaoLojaEl = document.getElementById('botao-loja');
+    const botaoPerfilJogadorEl = document.getElementById('botao-perfil-jogador');
+    const lojaContainerEl = document.getElementById('loja-container');
+    const avatarBaseEl = document.getElementById('avatar-base');
+    const avatarCabecaEl = document.getElementById('avatar-acessorio-cabeca');
+    const avatarRostoEl = document.getElementById('avatar-acessorio-rosto');
+    const avatarCompanheiroEl = document.getElementById('avatar-companheiro');
+    const pontosProblemaEl = document.getElementById('pontos-problema');
+    const botaoAjudaEl = document.getElementById('botao-ajuda');
+    const botaoPularEl = document.getElementById('botao-pular');
+    const inputNomePerfilEl = document.getElementById('input-nome-perfil');
+    const inputIdadePerfilEl = document.getElementById('input-idade-perfil');
+    const botaoSalvarPerfilEl = document.getElementById('botao-salvar-perfil');
+    const avatarBasePerfilEl = document.getElementById('avatar-base-perfil');
+    const avatarCabecaPerfilEl = document.getElementById('avatar-cabeca-perfil');
+    const avatarRostoPerfilEl = document.getElementById('avatar-rosto-perfil');
+    const avatarCompanheiroPerfilEl = document.getElementById('avatar-companheiro-perfil');
+
+    // --- Sons ---
+    const somAcerto = new Audio('assets/sounds/acerto.mp3'); 
+    const somErro = new Audio('assets/sounds/erro.mp3'); 
+    const somClique = new Audio('assets/sounds/clique.mp3');
 
     // --- Estrutura de dados de todas as matérias do jogo ---
     const DADOS_JOGOS = {
@@ -44,87 +90,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             gerador: (trilha, atividade) => JOGOS.ingles.gerarProblema(trilha, atividade)
         }
     };
+    
+    // --- DECLARAÇÃO DE FUNÇÕES ---
+    // (Todas as funções são declaradas aqui antes de serem chamadas)
 
-    // --- Elementos da DOM ---
-    const allViews = document.querySelectorAll('.view');
-    const pontosDisplay = document.getElementById('pontos-display');
-    const balaoFala = document.getElementById('balao-fala');
-    const enunciadoEl = document.getElementById('enunciado-problema');
-    const opcoesEl = document.getElementById('opcoes-resposta');
-    const listaBrindesAdminEl = document.getElementById('lista-brindes-admin');
-    const inputNomeBrindeEl = document.getElementById('input-nome-brinde');
-    const inputCustoBrindeEl = document.getElementById('input-custo-brinde');
-    const botaoAddBrindeEl = document.getElementById('botao-add-brinde');
-    const perfisContainerEl = document.querySelector('.perfis-container');
-    const listaUsuariosAdminEl = document.getElementById('lista-usuarios-admin');
-    const botaoLojaEl = document.getElementById('botao-loja');
-    const botaoPerfilJogadorEl = document.getElementById('botao-perfil-jogador');
-    const lojaContainerEl = document.getElementById('loja-container');
-    const avatarBaseEl = document.getElementById('avatar-base');
-    const avatarCabecaEl = document.getElementById('avatar-acessorio-cabeca');
-    const avatarRostoEl = document.getElementById('avatar-acessorio-rosto');
-    const avatarCompanheiroEl = document.getElementById('avatar-companheiro');
-    const pontosProblemaEl = document.getElementById('pontos-problema');
-    const botaoAjudaEl = document.getElementById('botao-ajuda');
-    const botaoPularEl = document.getElementById('botao-pular');
-    const inputNomePerfilEl = document.getElementById('input-nome-perfil');
-    const inputIdadePerfilEl = document.getElementById('input-idade-perfil');
-    const botaoSalvarPerfilEl = document.getElementById('botao-salvar-perfil');
-    const avatarBasePerfilEl = document.getElementById('avatar-base-perfil');
-    const avatarCabecaPerfilEl = document.getElementById('avatar-cabeca-perfil');
-    const avatarRostoPerfilEl = document.getElementById('avatar-rosto-perfil');
-    const avatarCompanheiroPerfilEl = document.getElementById('avatar-companheiro-perfil');
-
-    // --- Estado da Aplicação ---
-    let estado = { 
-        viewAtual: 'configuracoes-view', 
-        materiaAtual: null, 
-        trilhaAtual: null, 
-        atividadeAtual: null, 
-        problemaAtual: null,
-        jogoAtivo: false, 
-        usuarioAtual: null,
-        usuarios: [],
-        brindes: [] 
+    const tocarSom = (som) => { som.currentTime = 0; som.play().catch(e => console.log("Erro ao tocar som:", e)); };
+    const mascoteFala = (texto) => { balaoFala.textContent = texto; };
+    const atualizarPontosDisplay = () => {
+        pontosDisplay.textContent = estado.usuarioAtual ? estado.usuarioAtual.pontos : 0;
     };
+    const definirCorAtiva = (cor) => { document.documentElement.style.setProperty('--cor-ativa', cor); };
 
-    // --- Sons ---
-    const somAcerto = new Audio('assets/sounds/acerto.mp3'); 
-    const somErro = new Audio('assets/sounds/erro.mp3'); 
-    const somClique = new Audio('assets/sounds/clique.mp3');
-
-    // --- Lógica de Pontuação e Jogo ---
     async function adicionarPontos(quantidade) {
         if (!estado.usuarioAtual) return;
-        
         const novosPontos = Math.max(0, estado.usuarioAtual.pontos + quantidade);
         estado.usuarioAtual.pontos = novosPontos;
         atualizarPontosDisplay();
-
         const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
         await updateDoc(userDocRef, { pontos: novosPontos });
-    }
-
-    function gerarProblema() {
-        estado.jogoAtivo = true;
-        const idade = estado.usuarioAtual ? estado.usuarioAtual.idade : 8;
-        estado.problemaAtual = DADOS_JOGOS[estado.materiaAtual].gerador(estado.trilhaAtual, estado.atividadeAtual, idade);
-        
-        const problema = estado.problemaAtual;
-        opcoesEl.innerHTML = '';
-        
-        pontosProblemaEl.textContent = `Vale: ⭐ ${problema.pontos || 10} pontos`;
-        botaoAjudaEl.disabled = false;
-        botaoPularEl.disabled = false;
-
-        if (problema.objetosHTML) {
-             enunciadoEl.innerHTML = problema.enunciado;
-             opcoesEl.innerHTML = problema.objetosHTML;
-        } else {
-             enunciadoEl.innerHTML = problema.enunciado;
-        }
-        
-        gerarBotoesDeOpcao(problema.opcoes);
     }
 
     function gerarBotoesDeOpcao(opcoes) {
@@ -148,9 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         estado.jogoAtivo = false;
         botaoAjudaEl.disabled = true;
         botaoPularEl.disabled = true;
-
         const pontos = estado.problemaAtual.pontos || 10;
-
         if (acertou) {
             tocarSom(somAcerto);
             await adicionarPontos(pontos);
@@ -171,7 +152,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(gerarProblema, 2500);
     }
 
-    // --- Funções de UI e Navegação ---
+    function gerarProblema() {
+        estado.jogoAtivo = true;
+        const idade = estado.usuarioAtual ? estado.usuarioAtual.idade : 8;
+        estado.problemaAtual = DADOS_JOGOS[estado.materiaAtual].gerador(estado.trilhaAtual, estado.atividadeAtual, idade);
+        const problema = estado.problemaAtual;
+        opcoesEl.innerHTML = '';
+        pontosProblemaEl.textContent = `Vale: ⭐ ${problema.pontos || 10} pontos`;
+        botaoAjudaEl.disabled = false;
+        botaoPularEl.disabled = false;
+        if (problema.objetosHTML) {
+             enunciadoEl.innerHTML = problema.enunciado;
+             opcoesEl.innerHTML = problema.objetosHTML;
+        } else {
+             enunciadoEl.innerHTML = problema.enunciado;
+        }
+        gerarBotoesDeOpcao(problema.opcoes);
+    }
+
+    function configurarBotoesVoltar() {
+        const botoes = { 
+            'voltar-para-mapa': () => { mostrarView('mapa-view'); definirCorAtiva('#555'); mascoteFala(`Para qual ilha vamos agora, ${estado.usuarioAtual.nome}?`); }, 
+            'voltar-para-trilhas': () => mostrarTrilhas(estado.materiaAtual), 
+            'voltar-para-atividades': () => mostrarAtividades(estado.trilhaAtual),
+            'voltar-loja-para-mapa': () => { mostrarView('mapa-view'); definirCorAtiva('#555'); mascoteFala(`Vamos continuar a aventura, ${estado.usuarioAtual.nome}!`); },
+            'voltar-perfil-para-mapa': () => { mostrarView('mapa-view'); definirCorAtiva('#555'); mascoteFala(`Vamos continuar a aventura, ${estado.usuarioAtual.nome}!`); },
+            'voltar-config-para-mapa': () => { 
+                if (estado.usuarioAtual) {
+                    mostrarView('mapa-view');
+                    mascoteFala(`Vamos continuar a aventura, ${estado.usuarioAtual.nome}!`);
+                } else {
+                    mostrarView('configuracoes-view');
+                    mascoteFala("Quem está jogando agora?");
+                }
+            },
+            'voltar-admin-para-config': () => { mostrarView('configuracoes-view'); mascoteFala("Quem está jogando agora?"); }
+        };
+        for (const [id, acao] of Object.entries(botoes)) {
+            const btn = document.getElementById(id); 
+            if (btn) {
+                const novoBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(novoBtn, btn);
+                novoBtn.addEventListener('click', () => { tocarSom(somClique); acao(); });
+            }
+        }
+    }
+
     const mostrarView = (id) => { 
         estado.viewAtual = id; 
         allViews.forEach(v => v.classList.remove('active')); 
@@ -181,14 +207,88 @@ document.addEventListener('DOMContentLoaded', async () => {
         botaoLojaEl.style.display = logadoNoMapa ? 'flex' : 'none';
         botaoPerfilJogadorEl.style.display = logadoNoMapa ? 'flex' : 'none';
     };
-    const definirCorAtiva = (cor) => { document.documentElement.style.setProperty('--cor-ativa', cor); };
-    const tocarSom = (som) => { som.currentTime = 0; som.play().catch(e => console.log("Erro ao tocar som:", e)); };
-    const mascoteFala = (texto) => { balaoFala.textContent = texto; };
-    const atualizarPontosDisplay = () => {
-        pontosDisplay.textContent = estado.usuarioAtual ? estado.usuarioAtual.pontos : 0;
-    };
 
-    // --- Lógica de Usuários e Avatar com Firestore ---
+    function mostrarTrilhas(materia) {
+        tocarSom(somClique); estado.materiaAtual = materia; const dadosMateria = DADOS_JOGOS[materia];
+        definirCorAtiva(dadosMateria.cor); document.getElementById('trilhas-titulo').textContent = dadosMateria.nome;
+        const container = document.getElementById('trilhas-container'); container.innerHTML = '';
+        for (const [chaveTrilha, trilha] of Object.entries(dadosMateria.trilhas)) {
+            const botao = document.createElement('button'); botao.className = 'menu-botao';
+            botao.innerHTML = `<span class="icone">${trilha.icone}</span> ${trilha.nome}`;
+            botao.onclick = () => mostrarAtividades(chaveTrilha); container.appendChild(botao);
+        }
+        mostrarView('trilhas-view'); mascoteFala(`O que vamos praticar em ${dadosMateria.nome}?`);
+    }
+
+    function mostrarAtividades(trilha) {
+        tocarSom(somClique); estado.trilhaAtual = trilha; const dadosTrilha = DADOS_JOGOS[estado.materiaAtual].trilhas[trilha];
+        document.getElementById('atividades-titulo').textContent = dadosTrilha.nome;
+        const container = document.getElementById('atividades-container'); container.innerHTML = '';
+        for (const [chaveAtividade, atividade] of Object.entries(dadosTrilha.atividades)) {
+            const botao = document.createElement('button'); botao.className = 'menu-botao';
+            botao.onclick = () => iniciarJogo(chaveAtividade);
+            botao.innerHTML = `<span class="icone">${atividade.icone}</span> ${atividade.nome}`;
+            container.appendChild(botao);
+        }
+        mostrarView('atividades-view'); mascoteFala("Escolha um desafio divertido!");
+    }
+
+    function iniciarJogo(atividade) {
+        tocarSom(somClique); estado.atividadeAtual = atividade;
+        const dadosAtividade = DADOS_JOGOS[estado.materiaAtual].trilhas[estado.trilhaAtual].atividades[atividade];
+        document.getElementById('titulo-jogo').textContent = dadosAtividade.nome;
+        mostrarView('jogo-view'); 
+        gerarProblema();
+    }
+
+    function renderizarAvatar() {
+        const avatarBase = (estado.usuarioAtual && estado.usuarioAtual.avatar) ? estado.usuarioAtual.avatar : '🦉';
+        avatarBaseEl.textContent = avatarBase;
+        avatarCabecaEl.textContent = '';
+        avatarRostoEl.textContent = '';
+        avatarCompanheiroEl.textContent = '';
+        document.body.style.backgroundImage = '';
+        if (!estado.usuarioAtual) return;
+        estado.usuarioAtual.brindesComprados.forEach(brindeId => {
+            const brinde = estado.brindes.find(b => b.id === brindeId);
+            if (!brinde) return;
+            const emoji = (brinde.nome.match(/(\p{Emoji_Presentation})/gu) || [''])[0];
+            switch(brinde.slot) {
+                case 'base': avatarBaseEl.textContent = emoji; break;
+                case 'cabeca': avatarCabecaEl.textContent = emoji; break;
+                case 'rosto': avatarRostoEl.textContent = emoji; break;
+                case 'companheiro': avatarCompanheiroEl.textContent = emoji; break;
+                case 'fundo': 
+                    if (brinde.nome.includes('Estrelas')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #2c3e50, #4ca1af)';
+                    if (brinde.nome.includes('Submarino')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #0077be, #87ceeb)';
+                    if (brinde.nome.includes('Espacial')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #0f2027, #203a43, #2c5364)';
+                    break;
+            }
+        });
+    }
+
+    function renderizarPerfis() {
+        perfisContainerEl.innerHTML = '';
+        const adminButton = document.createElement('button');
+        adminButton.className = 'botao-perfil';
+        adminButton.id = 'botao-admin';
+        adminButton.innerHTML = `<span class="perfil-icone">👑</span><span class="perfil-nome">Administrador</span>`;
+        adminButton.addEventListener('click', () => { tocarSom(somClique); loginAdmin(); });
+        perfisContainerEl.appendChild(adminButton);
+        estado.usuarios.forEach(usuario => {
+            const perfilButton = document.createElement('button');
+            perfilButton.className = 'botao-perfil';
+            perfilButton.innerHTML = `<span class="perfil-icone">${usuario.avatar || '🧑‍🎓'}</span><span class="perfil-nome">${usuario.nome}</span>`;
+            perfilButton.addEventListener('click', () => selecionarUsuario(usuario.id));
+            perfisContainerEl.appendChild(perfilButton);
+        });
+        const novoUsuarioButton = document.createElement('button');
+        novoUsuarioButton.className = 'botao-perfil novo-usuario';
+        novoUsuarioButton.innerHTML = `<span class="perfil-icone">➕</span><span class="perfil-nome">Novo Jogador</span>`;
+        novoUsuarioButton.addEventListener('click', criarNovoUsuario);
+        perfisContainerEl.appendChild(novoUsuarioButton);
+    }
+
     async function criarNovoUsuario() {
         tocarSom(somClique);
         const nome = prompt("Qual é o seu nome, jovem aventureiro(a)?");
@@ -196,21 +296,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             mascoteFala("Para criar um perfil, preciso saber seu nome!");
             return;
         }
-
         let idadeInput = prompt(`Olá, ${nome.trim()}! Quantos anos você tem?`);
         let idade = parseInt(idadeInput, 10);
-
         if (isNaN(idade) || idade < 4 || idade > 12) {
             mascoteFala("Por favor, insira uma idade válida (entre 4 e 12 anos).");
             return;
         }
-
         let genero = prompt("Para o seu avatar, você escolhe 'menino' ou 'menina'?").toLowerCase();
         if (genero !== 'menino' && genero !== 'menina') {
             mascoteFala("Por favor, escolha 'menino' ou 'menina'.");
             return;
         }
-
         const novoUsuario = {
             nome: nome.trim(),
             idade: idade,
@@ -218,7 +314,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             pontos: 0,
             brindesComprados: []
         };
-
         await addDoc(collection(db, `artifacts/${appId}/users`), novoUsuario);
         mascoteFala(`Seja bem-vindo(a), ${nome.trim()}!`);
     }
@@ -235,69 +330,139 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function renderizarPerfis() {
-        perfisContainerEl.innerHTML = '';
-        
-        const adminButton = document.createElement('button');
-        adminButton.className = 'botao-perfil';
-        adminButton.id = 'botao-admin';
-        adminButton.innerHTML = `<span class="perfil-icone">👑</span><span class="perfil-nome">Administrador</span>`;
-        adminButton.addEventListener('click', () => { tocarSom(somClique); loginAdmin(); });
-        perfisContainerEl.appendChild(adminButton);
-
-        estado.usuarios.forEach(usuario => {
-            const perfilButton = document.createElement('button');
-            perfilButton.className = 'botao-perfil';
-            perfilButton.innerHTML = `<span class="perfil-icone">${usuario.avatar || '🧑‍🎓'}</span><span class="perfil-nome">${usuario.nome}</span>`;
-            perfilButton.addEventListener('click', () => selecionarUsuario(usuario.id));
-            perfisContainerEl.appendChild(perfilButton);
+    function renderizarLoja() {
+        lojaContainerEl.innerHTML = '';
+        estado.brindes.forEach(brinde => {
+            const item = document.createElement('div');
+            item.className = 'item-loja';
+            const jaComprou = estado.usuarioAtual.brindesComprados.includes(brinde.id);
+            const podeComprar = estado.usuarioAtual.pontos >= brinde.custo;
+            let icone = brinde.nome.match(/(\p{Emoji_Presentation})/gu);
+            icone = icone ? icone[0] : '🎁';
+            item.innerHTML = `
+                <div class="item-loja-icone">${icone}</div>
+                <div class="item-loja-nome">${brinde.nome.replace(/(\p{Emoji_Presentation})/gu, '').trim()}</div>
+                <div class="item-loja-custo">⭐ ${brinde.custo}</div>
+            `;
+            if (jaComprou) {
+                item.classList.add('comprado');
+            } else if (!podeComprar) {
+                item.classList.add('desabilitado');
+            } else {
+                item.addEventListener('click', () => comprarBrinde(brinde));
+            }
+            lojaContainerEl.appendChild(item);
         });
+    }
 
-        const novoUsuarioButton = document.createElement('button');
-        novoUsuarioButton.className = 'botao-perfil novo-usuario';
-        novoUsuarioButton.innerHTML = `<span class="perfil-icone">➕</span><span class="perfil-nome">Novo Jogador</span>`;
-        novoUsuarioButton.addEventListener('click', criarNovoUsuario);
-        perfisContainerEl.appendChild(novoUsuarioButton);
+    async function comprarBrinde(brinde) {
+        if (confirm(`Você quer gastar ${brinde.custo} pontos para comprar "${brinde.nome}"?`)) {
+            const novosPontos = estado.usuarioAtual.pontos - brinde.custo;
+            const novosBrindes = [...estado.usuarioAtual.brindesComprados, brinde.id];
+            estado.usuarioAtual.pontos = novosPontos;
+            estado.usuarioAtual.brindesComprados = novosBrindes;
+            atualizarPontosDisplay();
+            renderizarLoja();
+            renderizarAvatar();
+            const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
+            await updateDoc(userDocRef, {
+                pontos: novosPontos,
+                brindesComprados: novosBrindes
+            });
+            mascoteFala(`Parabéns! Você adquiriu ${brinde.nome}!`);
+        }
+    }
+
+    function loginAdmin() {
+        const senha = prompt("Digite a senha de administrador:");
+        if (senha === "Admin") {
+            estado.usuarioAtual = null;
+            atualizarPontosDisplay();
+            renderizarAvatar();
+            botaoLojaEl.style.display = 'none';
+            botaoPerfilJogadorEl.style.display = 'none';
+            mascoteFala("Olá, Administrador! O que vamos configurar hoje?");
+            mostrarView('admin-view');
+        } else if (senha !== null) {
+            mascoteFala("Senha incorreta. Acesso negado.");
+            alert("Senha incorreta!");
+        }
+    }
+
+    function renderizarBrindesAdmin() {
+        listaBrindesAdminEl.innerHTML = '';
+        if (estado.brindes.length === 0) {
+            listaBrindesAdminEl.innerHTML = '<p>Nenhum brinde cadastrado.</p>';
+            return;
+        }
+        estado.brindes.forEach(brinde => {
+            const item = document.createElement('div');
+            item.className = 'item-lista-admin';
+            item.innerHTML = `
+                <span>${brinde.nome}</span>
+                <div>
+                    <span class="custo-brinde">⭐ ${brinde.custo}</span>
+                    <button data-id="${brinde.firestoreId}">Remover</button>
+                </div>
+            `;
+            item.querySelector('button').addEventListener('click', () => removerBrinde(brinde.firestoreId));
+            listaBrindesAdminEl.appendChild(item);
+        });
+    }
+
+    function renderizarUsuariosAdmin() {
+        listaUsuariosAdminEl.innerHTML = '';
+        if (estado.usuarios.length === 0) {
+            listaUsuariosAdminEl.innerHTML = '<p>Nenhum usuário cadastrado.</p>';
+            return;
+        }
+        estado.usuarios.forEach(usuario => {
+            const item = document.createElement('div');
+            item.className = 'item-lista-admin';
+            item.innerHTML = `
+                <span>${usuario.nome}</span>
+                <div>
+                    <span class="custo-brinde">⭐ ${usuario.pontos}</span>
+                    <button data-id="${usuario.id}">Remover</button>
+                </div>
+            `;
+            item.querySelector('button').addEventListener('click', () => removerUsuario(usuario.id));
+            listaUsuariosAdminEl.appendChild(item);
+        });
+    }
+
+    async function adicionarBrinde() {
+        const nome = inputNomeBrindeEl.value.trim();
+        const custo = parseInt(inputCustoBrindeEl.value, 10);
+        if (!nome || isNaN(custo) || custo <= 0) {
+            alert("Por favor, preencha o nome e um custo válido para o brinde.");
+            return;
+        }
+        const novoBrinde = { id: Date.now(), nome, custo, tipo: 'custom', slot: 'rosto' };
+        await addDoc(collection(db, `artifacts/${appId}/public/data/brindes`), novoBrinde);
+        inputNomeBrindeEl.value = ''; inputCustoBrindeEl.value = '';
+        mascoteFala("Novo brinde adicionado com sucesso!");
+    }
+
+    async function removerBrinde(firestoreId) {
+        if (confirm("Tem certeza que deseja remover este brinde?")) {
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/brindes`, firestoreId));
+            mascoteFala("Brinde removido.");
+        }
     }
     
-    function renderizarAvatar() {
-        const avatarBase = (estado.usuarioAtual && estado.usuarioAtual.avatar) ? estado.usuarioAtual.avatar : '🦉';
-        avatarBaseEl.textContent = avatarBase;
-        avatarCabecaEl.textContent = '';
-        avatarRostoEl.textContent = '';
-        avatarCompanheiroEl.textContent = '';
-        document.body.style.backgroundImage = '';
-
-        if (!estado.usuarioAtual) return;
-
-        estado.usuarioAtual.brindesComprados.forEach(brindeId => {
-            const brinde = estado.brindes.find(b => b.id === brindeId);
-            if (!brinde) return;
-
-            const emoji = (brinde.nome.match(/(\p{Emoji_Presentation})/gu) || [''])[0];
-
-            switch(brinde.slot) {
-                case 'base': avatarBaseEl.textContent = emoji; break;
-                case 'cabeca': avatarCabecaEl.textContent = emoji; break;
-                case 'rosto': avatarRostoEl.textContent = emoji; break;
-                case 'companheiro': avatarCompanheiroEl.textContent = emoji; break;
-                case 'fundo': 
-                    if (brinde.nome.includes('Estrelas')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #2c3e50, #4ca1af)';
-                    if (brinde.nome.includes('Submarino')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #0077be, #87ceeb)';
-                    if (brinde.nome.includes('Espacial')) document.body.style.backgroundImage = 'linear-gradient(to bottom, #0f2027, #203a43, #2c5364)';
-                    break;
-            }
-        });
+    async function removerUsuario(id) {
+        if (confirm("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.")) {
+            await deleteDoc(doc(db, `artifacts/${appId}/users`, id));
+            mascoteFala("Usuário removido.");
+        }
     }
 
-    // --- Lógica da Página de Perfil ---
     function mostrarPerfil() {
         if (!estado.usuarioAtual) return;
         tocarSom(somClique);
-        
         inputNomePerfilEl.value = estado.usuarioAtual.nome;
         inputIdadePerfilEl.value = estado.usuarioAtual.idade;
-        
         renderizarAvatarPerfil();
         mostrarView('perfil-view');
         mascoteFala("Aqui você pode ver e editar seu perfil!");
@@ -309,9 +474,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         avatarCabecaPerfilEl.textContent = '';
         avatarRostoPerfilEl.textContent = '';
         avatarCompanheiroPerfilEl.textContent = '';
-
         if (!estado.usuarioAtual) return;
-
         estado.usuarioAtual.brindesComprados.forEach(brindeId => {
             const brinde = estado.brindes.find(b => b.id === brindeId);
             if (!brinde) return;
@@ -328,7 +491,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function salvarPerfil() {
         const novoNome = inputNomePerfilEl.value.trim();
         const novaIdade = parseInt(inputIdadePerfilEl.value, 10);
-
         if (!novoNome) {
             alert("O nome não pode ficar em branco!");
             return;
@@ -337,53 +499,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert("Por favor, insira uma idade válida entre 4 e 12 anos.");
             return;
         }
-
         estado.usuarioAtual.nome = novoNome;
         estado.usuarioAtual.idade = novaIdade;
-
         const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
         await updateDoc(userDocRef, {
             nome: novoNome,
             idade: novaIdade
         });
-
         mascoteFala("Seu perfil foi salvo com sucesso!");
         setTimeout(() => mostrarView('mapa-view'), 1500);
     }
 
-    // --- Lógica da Loja com Firestore ---
-    async function comprarBrinde(brinde) {
-        if (confirm(`Você quer gastar ${brinde.custo} pontos para comprar "${brinde.nome}"?`)) {
-            const novosPontos = estado.usuarioAtual.pontos - brinde.custo;
-            const novosBrindes = [...estado.usuarioAtual.brindesComprados, brinde.id];
-
-            estado.usuarioAtual.pontos = novosPontos;
-            estado.usuarioAtual.brindesComprados = novosBrindes;
-            atualizarPontosDisplay();
-            renderizarLoja();
-            renderizarAvatar();
-
-            const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
-            await updateDoc(userDocRef, {
-                pontos: novosPontos,
-                brindesComprados: novosBrindes
-            });
-
-            mascoteFala(`Parabéns! Você adquiriu ${brinde.nome}!`);
-        }
+    function mostrarLoja() {
+        tocarSom(somClique);
+        definirCorAtiva('#ffc107');
+        renderizarLoja();
+        mostrarView('loja-view');
+        mascoteFala("Aqui você pode trocar seus pontos por prêmios!");
     }
 
-    // --- Inicialização e Configuração do Firebase ---
     async function inicializarFirebase() {
         try {
             appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
             setLogLevel('debug');
-
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
             } else {
@@ -391,7 +533,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             userId = auth.currentUser?.uid || crypto.randomUUID();
             iniciarListenersFirestore();
-
         } catch (error) {
             console.error("Erro ao inicializar o Firebase:", error);
             mascoteFala("Erro de conexão! Não consigo salvar seu progresso.");
@@ -407,9 +548,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             estado.usuarios = usuariosTemp;
             renderizarPerfis();
-            // renderizarUsuariosAdmin();
+            renderizarUsuariosAdmin();
         });
-
         const brindesCollectionRef = collection(db, `artifacts/${appId}/public/data/brindes`);
         onSnapshot(brindesCollectionRef, (snapshot) => {
             const brindesTemp = [];
@@ -424,7 +564,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
             estado.brindes = brindesTemp;
-            // renderizarBrindesAdmin();
+            renderizarBrindesAdmin();
             if (estado.viewAtual === 'loja-view') {
                 renderizarLoja();
             }
