@@ -112,6 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputNomePerfilEl = document.getElementById('input-nome-perfil');
     const inputIdadePerfilEl = document.getElementById('input-idade-perfil');
     const botaoSalvarPerfilEl = document.getElementById('botao-salvar-perfil');
+    // Elementos do Modal
+    const modalOverlayEl = document.getElementById('modal-overlay');
+    const modalTitleEl = document.getElementById('modal-title');
+    const modalTextEl = document.getElementById('modal-text');
+    const modalInputEl = document.getElementById('modal-input');
+    const modalFooterEl = document.getElementById('modal-footer');
+
 
     // --- Sons ---
     const somAcerto = new Audio('assets/sounds/acerto.mp3');
@@ -143,25 +150,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
-    // --- FUNÇÕES DE MODAIS (Temporárias) ---
+    // --- NOVO SISTEMA DE MODAIS ---
     // ==========================================================================
-    // Estas funções substituirão os pop-ups nativos do navegador.
-    // Por enquanto, elas usam os métodos antigos para manter a funcionalidade
-    // até que a interface dos modais seja criada no HTML e CSS.
 
-    function exibirAlerta(mensagem) {
-        console.warn("Usando alert() nativo temporariamente.");
-        alert(mensagem);
+    /**
+     * Exibe um modal customizado.
+     * @param {object} config - Objeto de configuração do modal.
+     * @param {string} config.title - O título do modal.
+     * @param {string} config.text - O texto do corpo do modal.
+     * @param {boolean} [config.showInput=false] - Se deve mostrar um campo de input.
+     * @param {Array<object>} config.buttons - Array de botões para o rodapé.
+     * @returns {Promise<string|boolean|null>} - Retorna o valor do botão clicado ou o texto do input.
+     */
+    function exibirModal(config) {
+        return new Promise(resolve => {
+            modalTitleEl.textContent = config.title;
+            modalTextEl.textContent = config.text;
+            modalInputEl.style.display = config.showInput ? 'block' : 'none';
+            modalInputEl.value = '';
+            modalFooterEl.innerHTML = '';
+
+            config.buttons.forEach(btnConfig => {
+                const button = document.createElement('button');
+                button.className = `modal-button ${btnConfig.class}`;
+                button.textContent = btnConfig.text;
+                button.onclick = () => {
+                    modalOverlayEl.classList.remove('active');
+                    if (config.showInput) {
+                        resolve(modalInputEl.value);
+                    } else {
+                        resolve(btnConfig.value);
+                    }
+                };
+                modalFooterEl.appendChild(button);
+            });
+
+            modalOverlayEl.classList.add('active');
+            if (config.showInput) {
+                modalInputEl.focus();
+            }
+        });
     }
 
-    function exibirConfirmacao(pergunta) {
-        console.warn("Usando confirm() nativo temporariamente.");
-        return confirm(pergunta);
+    /**
+     * Exibe um modal de alerta simples com um botão "OK".
+     * @param {string} mensagem - A mensagem a ser exibida.
+     * @param {string} [titulo="Atenção"] - O título do modal.
+     */
+    async function exibirAlerta(mensagem, titulo = "Atenção") {
+        await exibirModal({
+            title: titulo,
+            text: mensagem,
+            buttons: [{ text: 'OK', class: 'primary', value: true }]
+        });
     }
 
-    function exibirPrompt(pergunta, valorDefault = '') {
-        console.warn("Usando prompt() nativo temporariamente.");
-        return prompt(pergunta, valorDefault);
+    /**
+     * Exibe um modal de confirmação com botões "Sim" e "Não".
+     * @param {string} pergunta - A pergunta de confirmação.
+     * @param {string} [titulo="Confirmar"] - O título do modal.
+     * @returns {Promise<boolean>} - Retorna true se "Sim" for clicado, false caso contrário.
+     */
+    async function exibirConfirmacao(pergunta, titulo = "Confirmar") {
+        const resultado = await exibirModal({
+            title: titulo,
+            text: pergunta,
+            buttons: [
+                { text: 'Sim', class: 'confirm', value: true },
+                { text: 'Não', class: 'cancel', value: false }
+            ]
+        });
+        return resultado;
+    }
+
+    /**
+     * Exibe um modal que solicita uma entrada de texto do usuário.
+     * @param {string} pergunta - A pergunta para o usuário.
+     * @param {string} [titulo="Entrada de Dados"] - O título do modal.
+     * @returns {Promise<string|null>} - Retorna o texto inserido ou null se cancelado.
+     */
+    async function exibirPrompt(pergunta, titulo = "Entrada de Dados") {
+        const resultado = await exibirModal({
+            title: titulo,
+            text: pergunta,
+            showInput: true,
+            buttons: [
+                { text: 'Confirmar', class: 'confirm', value: 'confirm' },
+                { text: 'Cancelar', class: 'cancel', value: 'cancel' }
+            ]
+        });
+        // Retorna o valor do input apenas se o usuário clicou em "Confirmar"
+        return resultado !== 'cancel' ? modalInputEl.value : null;
     }
 
 
@@ -169,9 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DO JOGO ---
     // ==========================================================================
 
-    /**
-     * Gera e exibe um novo problema na tela com base no estado atual.
-     */
     function gerarProblema() {
         estado.jogoAtivo = true;
         const idade = estado.usuarioAtual ? estado.usuarioAtual.idade : 8;
@@ -189,20 +265,17 @@ document.addEventListener('DOMContentLoaded', () => {
         pontosProblemaEl.textContent = `Vale: ⭐ ${problema.pontos || 10} pontos`;
         botaoAjudaEl.disabled = false;
         botaoPularEl.disabled = false;
-
-        // Limpa classes de layout anteriores das opções
         opcoesEl.className = 'opcoes-resposta';
 
         if (problema.objetosHTML) {
              enunciadoEl.innerHTML = problema.enunciado;
              opcoesEl.innerHTML = problema.objetosHTML;
-             // Adiciona classes específicas para layouts de jogos complexos
              if(problema.tipo === 'keypad_input') opcoesEl.classList.add('layout-keypad');
              if(problema.tipo === 'drag_classificacao') opcoesEl.classList.add('layout-classificacao');
              if(problema.tipo === 'relogio_interativo') opcoesEl.classList.add('layout-relogio');
              if(problema.tipo === 'drag_drop_dinheiro') opcoesEl.classList.add('layout-dinheiro');
              if(problema.tipo === 'clique_em_objetos') opcoesEl.classList.add('layout-objetos');
-             if(problema.tipo === 'multipla_escolha' && problema.objetosHTML) opcoesEl.classList.add('layout-solido'); // Para sólidos 3D
+             if(problema.tipo === 'multipla_escolha' && problema.objetosHTML) opcoesEl.classList.add('layout-solido');
 
         } else {
              enunciadoEl.innerHTML = problema.enunciado;
@@ -210,10 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Cria os botões de múltipla escolha para um problema.
-     * @param {string[]} opcoes - Um array com as opções de resposta.
-     */
     function gerarBotoesDeOpcao(opcoes) {
         opcoesEl.innerHTML = '';
         const opcoesEmbaralhadas = [...opcoes].sort(() => Math.random() - 0.5);
@@ -230,11 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Processa a resposta do jogador, calcula pontos e prepara o próximo problema.
-     * @param {boolean} acertou - Se o jogador acertou a questão.
-     * @param {HTMLElement} botaoClicado - O botão que foi clicado (opcional).
-     */
     async function resolverProblema(acertou, botaoClicado = null) {
         if (!estado.jogoAtivo) return;
         estado.jogoAtivo = false;
@@ -255,14 +319,13 @@ document.addEventListener('DOMContentLoaded', () => {
             mascoteFala(`Ops! A resposta correta era ${estado.problemaAtual.respostaCorreta}. Você perdeu ${pontosPerdidos} pontos.`);
             if (botaoClicado) {
                 botaoClicado.classList.add('incorreta');
-                // Destaca a resposta correta
                 document.querySelectorAll('.botao-resposta').forEach(b => {
                     if (b.dataset.valor == estado.problemaAtual.respostaCorreta) b.classList.add('correta');
                 });
             }
         }
 
-        setTimeout(gerarProblema, 2500); // Prepara o próximo desafio
+        setTimeout(gerarProblema, 2500);
     }
 
 
@@ -270,10 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVEGAÇÃO E RENDERIZAÇÃO DE VIEWS ---
     // ==========================================================================
 
-    /**
-     * Alterna a visibilidade das telas (views) da aplicação.
-     * @param {string} id - O ID da view a ser exibida.
-     */
     const mostrarView = (id) => {
         estado.viewAtual = id;
         allViews.forEach(v => v.classList.remove('active'));
@@ -282,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewAtiva.classList.add('active');
         } else {
             console.error(`View com id "${id}" não encontrada.`);
-            document.getElementById('mapa-view').classList.add('active'); // Fallback
+            document.getElementById('mapa-view').classList.add('active');
         }
         
         const logadoNoMapa = estado.usuarioAtual && id === 'mapa-view';
@@ -290,10 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
         botaoPerfilJogadorEl.style.display = logadoNoMapa ? 'flex' : 'none';
     };
 
-    /**
-     * Renderiza a tela de trilhas para uma matéria específica.
-     * @param {string} materia - A chave da matéria (ex: 'matematica').
-     */
     function mostrarTrilhas(materia) {
         tocarSom(somClique);
         estado.materiaAtual = materia;
@@ -313,10 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mascoteFala(`O que vamos praticar em ${dadosMateria.nome}?`);
     }
 
-    /**
-     * Renderiza a tela de atividades para uma trilha específica.
-     * @param {string} trilha - A chave da trilha (ex: 'adicao').
-     */
     function mostrarAtividades(trilha) {
         tocarSom(somClique);
         estado.trilhaAtual = trilha;
@@ -335,10 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mascoteFala("Escolha um desafio divertido!");
     }
 
-    /**
-     * Inicia o jogo para uma atividade específica.
-     * @param {string} atividade - A chave da atividade (ex: 'classico').
-     */
     function iniciarJogo(atividade) {
         tocarSom(somClique);
         estado.atividadeAtual = atividade;
@@ -352,28 +399,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE USUÁRIOS, PERFIL E AVATAR ---
     // ==========================================================================
 
-    /**
-     * Renderiza o avatar do jogador no HUD e na tela de perfil.
-     * Centraliza a lógica para evitar duplicação.
-     */
     function renderizarAvatar() {
         const user = estado.usuarioAtual;
         const base = user ? user.avatar : '🧑‍🎓';
         const brindes = user ? user.brindesComprados : [];
 
-        // Elementos do HUD
         const avatarBaseEl = document.getElementById('avatar-base');
         const avatarCabecaEl = document.getElementById('avatar-acessorio-cabeca');
         const avatarRostoEl = document.getElementById('avatar-acessorio-rosto');
         const avatarCompanheiroEl = document.getElementById('avatar-companheiro');
         
-        // Elementos da tela de Perfil
         const avatarBasePerfilEl = document.getElementById('avatar-base-perfil');
         const avatarCabecaPerfilEl = document.getElementById('avatar-cabeca-perfil');
         const avatarRostoPerfilEl = document.getElementById('avatar-rosto-perfil');
         const avatarCompanheiroPerfilEl = document.getElementById('avatar-companheiro-perfil');
 
-        // Reseta os avatares
         avatarBaseEl.textContent = base;
         avatarBasePerfilEl.textContent = base;
         [avatarCabecaEl, avatarRostoEl, avatarCompanheiroEl, avatarCabecaPerfilEl, avatarRostoPerfilEl, avatarCompanheiroPerfilEl].forEach(el => el.textContent = '');
@@ -412,13 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Renderiza a lista de perfis de usuário na tela de login.
-     */
     function renderizarPerfis() {
         perfisContainerEl.innerHTML = '';
         
-        // Botão de Administrador
         const adminButton = document.createElement('button');
         adminButton.className = 'botao-perfil';
         adminButton.id = 'botao-admin';
@@ -426,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
         adminButton.addEventListener('click', () => { tocarSom(somClique); loginAdmin(); });
         perfisContainerEl.appendChild(adminButton);
 
-        // Botões para cada usuário
         estado.usuarios.forEach(usuario => {
             const perfilButton = document.createElement('button');
             perfilButton.className = 'botao-perfil';
@@ -435,7 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
             perfisContainerEl.appendChild(perfilButton);
         });
 
-        // Botão para criar novo jogador
         const novoUsuarioButton = document.createElement('button');
         novoUsuarioButton.className = 'botao-perfil novo-usuario';
         novoUsuarioButton.innerHTML = `<span class="perfil-icone">➕</span><span class="perfil-nome">Novo Jogador</span>`;
@@ -443,25 +477,24 @@ document.addEventListener('DOMContentLoaded', () => {
         perfisContainerEl.appendChild(novoUsuarioButton);
     }
 
-    /**
-     * Inicia o fluxo para criar um novo usuário.
-     */
     async function criarNovoUsuario() {
         tocarSom(somClique);
-        const nome = exibirPrompt("Qual é o seu nome, jovem aventureiro(a)?");
+        const nome = await exibirPrompt("Qual é o seu nome, jovem aventureiro(a)?", "Novo Jogador");
         if (!nome || nome.trim() === "") {
             mascoteFala("Para criar um perfil, preciso saber seu nome!");
             return;
         }
 
-        let idadeInput = exibirPrompt(`Olá, ${nome.trim()}! Quantos anos você tem?`);
-        let idade = parseInt(idadeInput, 10);
+        const idadeInput = await exibirPrompt(`Olá, ${nome.trim()}! Quantos anos você tem?`, "Idade");
+        const idade = parseInt(idadeInput, 10);
         if (isNaN(idade) || idade < 4 || idade > 12) {
             mascoteFala("Por favor, insira uma idade válida (entre 4 e 12 anos).");
             return;
         }
 
-        let genero = exibirPrompt("Para o seu avatar, você escolhe 'menino' ou 'menina'?", 'menino').toLowerCase();
+        const generoInput = await exibirPrompt("Para o seu avatar, você escolhe 'menino' ou 'menina'?", "Avatar");
+        if (generoInput === null) return; // Usuário cancelou
+        const genero = generoInput.toLowerCase();
         if (genero !== 'menino' && genero !== 'menina') {
             mascoteFala("Por favor, escolha 'menino' ou 'menina'.");
             return;
@@ -484,10 +517,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Seleciona um usuário como o jogador atual.
-     * @param {string} id - O ID do usuário a ser selecionado.
-     */
     function selecionarUsuario(id) {
         tocarSom(somClique);
         const usuario = estado.usuarios.find(u => u.id === id);
@@ -500,12 +529,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Inicia o fluxo de login do administrador.
-     */
-    function loginAdmin() {
-        const senha = exibirPrompt("Digite a senha de administrador:");
-        if (senha === "Admin123") { // Senha alterada para ser um pouco mais segura
+    async function loginAdmin() {
+        const senha = await exibirPrompt("Digite a senha de administrador:", "Senha de Administrador");
+        if (senha === "Admin123") {
             estado.usuarioAtual = null;
             atualizarPontosDisplay();
             renderizarAvatar();
@@ -513,24 +539,21 @@ document.addEventListener('DOMContentLoaded', () => {
             botaoPerfilJogadorEl.style.display = 'none';
             mascoteFala("Olá, Administrador! O que vamos configurar hoje?");
             mostrarView('admin-view');
-        } else if (senha !== null) { // Se o usuário não clicou em "cancelar"
+        } else if (senha !== null) {
             mascoteFala("Senha incorreta. Acesso negado.");
-            exibirAlerta("Senha incorreta!");
+            await exibirAlerta("Senha incorreta!", "Acesso Negado");
         }
     }
     
-    /**
-     * Salva as alterações feitas no perfil do jogador.
-     */
     async function salvarPerfil() {
         const novoNome = inputNomePerfilEl.value.trim();
         const novaIdade = parseInt(inputIdadePerfilEl.value, 10);
         if (!novoNome) {
-            exibirAlerta("O nome não pode ficar em branco!");
+            await exibirAlerta("O nome não pode ficar em branco!");
             return;
         }
         if (isNaN(novaIdade) || novaIdade < 4 || novaIdade > 12) {
-            exibirAlerta("Por favor, insira uma idade válida entre 4 e 12 anos.");
+            await exibirAlerta("Por favor, insira uma idade válida entre 4 e 12 anos.");
             return;
         }
 
@@ -553,9 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DA LOJA E ADMINISTRAÇÃO ---
     // ==========================================================================
 
-    /**
-     * Renderiza os itens na loja de brindes.
-     */
     function renderizarLoja() {
         lojaContainerEl.innerHTML = '';
         estado.brindes.forEach(brinde => {
@@ -583,12 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Processa a compra de um brinde.
-     * @param {object} brinde - O objeto do brinde a ser comprado.
-     */
     async function comprarBrinde(brinde) {
-        if (exibirConfirmacao(`Você quer gastar ${brinde.custo} pontos para comprar "${brinde.nome}"?`)) {
+        const confirmou = await exibirConfirmacao(`Você quer gastar ${brinde.custo} pontos para comprar "${brinde.nome}"?`, "Confirmar Compra");
+        if (confirmou) {
             const novosPontos = estado.usuarioAtual.pontos - brinde.custo;
             const novosBrindes = [...estado.usuarioAtual.brindesComprados, brinde.id];
             
@@ -609,16 +626,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Erro ao comprar brinde:", error);
                 mascoteFala("Ops! Tive um problema para registrar sua compra.");
-                // Reverte o estado local em caso de erro
                 estado.usuarioAtual.pontos += brinde.custo;
                 estado.usuarioAtual.brindesComprados.pop();
             }
         }
     }
 
-    /**
-     * Renderiza a lista de brindes no painel do administrador.
-     */
     function renderizarBrindesAdmin() {
         listaBrindesAdminEl.innerHTML = '';
         if (estado.brindes.length === 0) {
@@ -637,9 +650,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    /**
-     * Renderiza a lista de usuários no painel do administrador.
-     */
     function renderizarUsuariosAdmin() {
         listaUsuariosAdminEl.innerHTML = '';
         if (estado.usuarios.length === 0) {
@@ -658,17 +668,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Adiciona um novo brinde ao Firestore.
-     */
     async function adicionarBrinde() {
         const nome = inputNomeBrindeEl.value.trim();
         const custo = parseInt(inputCustoBrindeEl.value, 10);
         if (!nome || isNaN(custo) || custo <= 0) {
-            exibirAlerta("Por favor, preencha o nome e um custo válido para o brinde.");
+            await exibirAlerta("Por favor, preencha o nome e um custo válido para o brinde.");
             return;
         }
-        // O ID numérico é apenas para uso local, o Firestore gerará o ID do documento.
         const novoBrinde = { id: Date.now(), nome, custo, tipo: 'custom', slot: 'rosto' }; 
         try {
             await addDoc(collection(db, `artifacts/${appId}/public/data/brindes`), novoBrinde);
@@ -681,12 +687,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Remove um brinde do Firestore.
-     * @param {string} firestoreId - O ID do documento do brinde no Firestore.
-     */
     async function removerBrinde(firestoreId) {
-        if (exibirConfirmacao("Tem certeza que deseja remover este brinde?")) {
+        if (await exibirConfirmacao("Tem certeza que deseja remover este brinde?", "Remover Brinde")) {
             try {
                 await deleteDoc(doc(db, `artifacts/${appId}/public/data/brindes`, firestoreId));
                 mascoteFala("Brinde removido.");
@@ -697,12 +699,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Remove um usuário do Firestore.
-     * @param {string} id - O ID do documento do usuário no Firestore.
-     */
     async function removerUsuario(id) {
-        if (exibirConfirmacao("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.")) {
+        if (await exibirConfirmacao("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.", "Remover Usuário")) {
             try {
                 await deleteDoc(doc(db, `artifacts/${appId}/users`, id));
                 mascoteFala("Usuário removido.");
@@ -717,16 +715,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     // ==========================================================================
 
-    /**
-     * Inicializa a conexão com o Firebase e a autenticação.
-     */
     async function inicializarFirebase() {
         try {
-            // As variáveis __app_id e __firebase_config são injetadas pelo ambiente.
             appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
             
-            // Validação da configuração do Firebase
             if (!firebaseConfigStr || firebaseConfigStr === '{}') {
                 throw new Error("Configuração do Firebase não fornecida ou inválida.");
             }
@@ -740,9 +733,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            setLogLevel('debug'); // 'debug' para desenvolvimento, 'silent' para produção
+            setLogLevel('debug');
 
-            // Autenticação
             const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             if (authToken) {
                 await signInWithCustomToken(auth, authToken);
@@ -754,22 +746,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("Falha na autenticação do usuário.");
             }
             
-            // Inicia os listeners do Firestore somente após a inicialização bem-sucedida
             iniciarListenersFirestore();
 
         } catch (error) {
             console.error("ERRO CRÍTICO AO INICIALIZAR FIREBASE:", error);
             mascoteFala("Erro de conexão! Não consigo salvar seu progresso.");
-            // Exibe uma mensagem de erro mais visível para o usuário
             document.body.innerHTML = `<div style="text-align: center; padding: 50px; font-family: sans-serif; color: red;"><h1>Erro de Conexão</h1><p>Não foi possível conectar ao servidor do jogo. Por favor, recarregue a página.</p><p><i>Detalhe do erro: ${error.message}</i></p></div>`;
         }
     }
 
-    /**
-     * Inicia os listeners em tempo real do Firestore para usuários and brindes.
-     */
     function iniciarListenersFirestore() {
-        // Listener para a coleção de usuários
         const usersCollectionRef = collection(db, `artifacts/${appId}/users`);
         onSnapshot(usersCollectionRef, (snapshot) => {
             const usuariosTemp = [];
@@ -786,12 +772,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mascoteFala("Problema ao carregar os perfis.");
         });
 
-        // Listener para a coleção de brindes
         const brindesCollectionRef = collection(db, `artifacts/${appId}/public/data/brindes`);
         onSnapshot(brindesCollectionRef, (snapshot) => {
             let brindesTemp = [];
             if (snapshot.empty) {
-                // Se a coleção está vazia, popula com os brindes padrão
                 console.log("Populando brindes padrão no Firestore...");
                 BRINDES_PADRAO.forEach(async (brinde) => {
                     await addDoc(brindesCollectionRef, brinde);
@@ -803,7 +787,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             estado.brindes = brindesTemp;
-            // Re-renderiza as telas que dependem dos brindes, se estiverem ativas
             if (estado.viewAtual === 'admin-view') renderizarBrindesAdmin();
             if (estado.viewAtual === 'loja-view') renderizarLoja();
             
@@ -813,11 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Ponto de entrada principal da aplicação. Configura os event listeners iniciais.
-     */
     async function inicializarApp() {
-        // Configura a navegação pelas ilhas
         document.getElementById('ilha-matematica').addEventListener('click', () => mostrarTrilhas('matematica'));
         document.getElementById('ilha-portugues').addEventListener('click', () => mostrarTrilhas('portugues'));
         document.getElementById('ilha-ciencias').addEventListener('click', () => mostrarTrilhas('ciencias'));
@@ -825,11 +804,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ilha-geografia').addEventListener('click', () => mostrarTrilhas('geografia'));
         document.getElementById('ilha-ingles').addEventListener('click', () => mostrarTrilhas('ingles'));
         
-        // Configura botões do HUD
         document.getElementById('botao-configuracoes').addEventListener('click', () => {
             tocarSom(somClique);
             definirCorAtiva('#888');
-            estado.usuarioAtual = null; // Desloga o usuário
+            estado.usuarioAtual = null;
             atualizarPontosDisplay();
             renderizarAvatar();
             mostrarView('configuracoes-view');
@@ -852,7 +830,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mascoteFala("Aqui você pode ver e editar seu perfil!");
         });
         
-        // Configura botões de ação
         botaoAddBrindeEl.addEventListener('click', adicionarBrinde);
         botaoSalvarPerfilEl.addEventListener('click', salvarPerfil);
         botaoAjudaEl.addEventListener('click', async () => {
@@ -869,7 +846,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gerarProblema();
         });
 
-        // Configura botões de voltar
         document.body.addEventListener('click', (e) => {
             if (e.target.classList.contains('botao-voltar')) {
                 tocarSom(somClique);
@@ -877,7 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (id === 'voltar-para-mapa' || id === 'voltar-loja-para-mapa' || id === 'voltar-perfil-para-mapa') {
                     mostrarView('mapa-view');
                     definirCorAtiva('#555');
-                    mascoteFala(`Vamos continuar a aventura, ${estado.usuarioAtual.nome}!`);
+                    if(estado.usuarioAtual) mascoteFala(`Vamos continuar a aventura, ${estado.usuarioAtual.nome}!`);
                 } else if (id === 'voltar-para-trilhas') {
                     mostrarTrilhas(estado.materiaAtual);
                 } else if (id === 'voltar-para-atividades') {
@@ -897,7 +873,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Inicia o Firebase e, em caso de sucesso, o resto da aplicação
         await inicializarFirebase();
         
         mascoteFala("Olá! Bem-vindo(a) à Aventura do Saber!");
