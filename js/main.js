@@ -4,7 +4,7 @@
  * Responsável pela inicialização do Firebase, gerenciamento de estado, navegação
  * entre telas e lógica central do jogo.
  *
- * * Versão 2.1 - Correção do acesso a variáveis globais e do erro de inicialização.
+ * Versão 2.1 - Correção do acesso a variáveis globais e implementação de modais.
  */
 
 // --- Módulos do Firebase ---
@@ -121,8 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Sons ---
-    const somAcerto = new Audio('assets/sounds/acerto.mp3');
-    const somErro = new Audio('assets/sounds/erro.mp3');
+    const somAcerto = new Audio('assets/sounds/acerto.mp3'); 
+    const somErro = new Audio('assets/sounds/erro.mp3'); 
     const somClique = new Audio('assets/sounds/clique.mp3');
 
     // ==========================================================================
@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         brindes.forEach(brindeId => {
             const brinde = estado.brindes.find(b => b.id === brindeId);
             if (!brinde) return;
-            const emoji = (brinde.nome.match(/(\p{Emoji_Presentation})/gu) || [''])[0];
+            const emoji = (brinde.nome.match(/(\p{Emoji_Presentation}|\p{Emoji_Modifier_Base}|\p{Emoji_Modifier})/gu) || [''])[0];
 
             switch (brinde.slot) {
                 case 'base':
@@ -474,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         estado.usuarios.forEach(usuario => {
             const perfilButton = document.createElement('button');
             perfilButton.className = 'botao-perfil';
-            perfilButton.innerHTML = `<span class="perfil-icone">${usuario.avatar || '🧑‍�'}</span><span class="perfil-nome">${usuario.nome}</span>`;
+            perfilButton.innerHTML = `<span class="perfil-icone">${usuario.avatar || '🧑‍🎓'}</span><span class="perfil-nome">${usuario.nome}</span>`;
             perfilButton.addEventListener('click', () => selecionarUsuario(usuario.id));
             perfisContainerEl.appendChild(perfilButton);
         });
@@ -595,7 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
             item.className = 'item-loja';
             const jaComprou = estado.usuarioAtual.brindesComprados.includes(brinde.id);
             const podeComprar = estado.usuarioAtual.pontos >= brinde.custo;
-            let icone = brinde.nome.match(/(\p{Emoji_Presentation})/gu);
+            let icone = brinde.nome.match(/(\p{Emoji_Presentation}|\p{Emoji_Modifier_Base}|\p{Emoji_Modifier})/gu);
             icone = icone ? icone[0] : '🎁';
 
             item.innerHTML = `
@@ -730,12 +730,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     // ==========================================================================
 
+    /**
+     * Inicializa a conexão com o Firebase e a autenticação.
+     */
     async function inicializarFirebase() {
         try {
-            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
-            const firebaseConfigStr = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : '{}';
+            // As variáveis __app_id e __firebase_config são injetadas pelo ambiente.
+            appId = window.appId;
+            const firebaseConfigStr = window.firebaseConfig;
             
-            if (!firebaseConfigStr || firebaseConfigStr === '{}' || firebaseConfigStr === '{{ an_firebase_config }}') {
+            if (!firebaseConfigStr || firebaseConfigStr === '{{ an_firebase_config }}') {
                 throw new Error("Configuração do Firebase não fornecida ou inválida.");
             }
             
@@ -750,8 +754,8 @@ document.addEventListener('DOMContentLoaded', () => {
             auth = getAuth(app);
             setLogLevel('debug');
 
-            const authToken = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
-            if (authToken) {
+            const authToken = window.authToken;
+            if (authToken && authToken !== '{{ auth_token }}') {
                 await signInWithCustomToken(auth, authToken);
             } else {
                 await signInAnonymously(auth);
@@ -765,11 +769,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("ERRO CRÍTICO AO INICIALIZAR FIREBASE:", error);
-            if (balaoFala) mascoteFala("Erro de conexão! Não consigo salvar seu progresso.");
-            document.body.innerHTML = `<div style="text-align: center; padding: 50px; font-family: sans-serif; color: red;"><h1>Erro de Conexão</h1><p>Não foi possível conectar ao servidor do jogo. Por favor, recarregue a página.</p><p><i>Detalhe do erro: ${error.message}</i></p></div>`;
+            const appContainer = document.getElementById('app-container');
+            if (appContainer) {
+                appContainer.innerHTML = `<div style="text-align: center; padding: 50px; font-family: sans-serif; color: #D8000C; background-color: #FFBABA; border: 1px solid; margin: 10px 0px; padding:15px 10px 15px 50px; background-repeat: no-repeat; background-position: 10px center;"><h1>Erro de Conexão</h1><p>Não foi possível conectar ao servidor do jogo. Por favor, recarregue a página.</p><p><i>Detalhe do erro: ${error.message}</i></p></div>`;
+            }
         }
     }
 
+    /**
+     * Inicia os listeners em tempo real do Firestore para usuários and brindes.
+     */
     function iniciarListenersFirestore() {
         // Listener para a coleção de usuários
         const usersCollectionRef = collection(db, `artifacts/${appId}/users`);
@@ -814,30 +823,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Ponto de entrada da aplicação. Configura os event listeners iniciais.
+     * Ponto de entrada principal da aplicação. Configura os event listeners iniciais.
      */
     async function inicializarApp() {
-        // Adiciona a estrutura do modal ao corpo do documento
-        const modalHTML = `
-            <div id="modal-overlay" class="modal-overlay">
-                <div class="modal-container">
-                    <div class="modal-header">
-                        <h3 id="modal-title"></h3>
-                    </div>
-                    <div class="modal-body">
-                        <p id="modal-text"></p>
-                        <input type="text" id="modal-input" style="display: none;">
-                    </div>
-                    <div id="modal-footer" class="modal-footer"></div>
-                </div>
-            </div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-
         // Inicializa o Firebase primeiro
         await inicializarFirebase();
 
         // Se a inicialização falhar, o código abaixo não será executado
         // pois a função `inicializarFirebase` irá parar a execução e mostrar um erro.
+        if (!db) return;
         
         // Configura a navegação pelas ilhas
         document.getElementById('ilha-matematica').addEventListener('click', () => mostrarTrilhas('matematica'));
