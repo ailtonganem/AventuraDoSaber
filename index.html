@@ -60,7 +60,7 @@
                         <span>Ilha do Mundo</span>
                     </div>
                     <div class="ilha" id="ilha-ingles">
-                        <div class="ilha-icone">🇬🇧</div>
+                        <div class.="ilha-icone">🇬🇧</div>
                         <span>The English Island</span>
                     </div>
                 </div>
@@ -176,35 +176,12 @@
         </main>
     </div>
 
-    <!-- Scripts do Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, setLogLevel, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-      
-        window.firebase = {
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
-            firestore: { getFirestore, setLogLevel, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc }
-        };
-    </script>
-
-    <!-- Scripts do Jogo -->
-    <script src="js/matematica/operacoes.js"></script>
-    <script src="js/matematica/fracoes.js"></script>
-    <script src="js/matematica/geometria.js"></script>
-    <script src="js/matematica/medidas.js"></script>
-    <script src="js/matematica/resolucao_problemas.js"></script>
-    <script src="js/matematica/estatistica.js"></script>
-    <script src="js/matematica/probabilidade.js"></script>
-    <script src="js/portugues/ortografia.js"></script>
-    <script src="js/historia.js"></script>
-    <script src="js/geografia.js"></script>
-    <script src="js/ciencias.js"></script>
-    <script src="js/ingles.js"></script>
-    
-    <script src="js/config.js"></script> 
-    
-    <script src="js/main.js"></script>
+    <!-- 
+      Todos os scripts foram removidos daqui.
+      O único ponto de entrada agora é o main.js, que será carregado como um módulo.
+      Isso organiza o código e é o primeiro passo para a modernização.
+    -->
+    <script src="js/main.js" type="module"></script>
 
 </body>
 </html>
