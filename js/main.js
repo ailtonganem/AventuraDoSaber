@@ -14,14 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...JOGOS.estatistica.DADOS,
                 ...JOGOS.probabilidade.DADOS
             },
-            gerador: (trilha, atividade) => {
-                if (trilha in JOGOS.operacoes.DADOS) return JOGOS.operacoes.gerarProblema(trilha, atividade);
-                if (trilha in JOGOS.fracoes.DADOS) return JOGOS.fracoes.gerarProblema(trilha, atividade);
-                if (trilha in JOGOS.geometria.DADOS) return JOGOS.geometria.gerarProblema(trilha, atividade);
-                if (trilha in JOGOS.medidas.DADOS) return JOGOS.medidas.gerarProblema(trilha, atividade);
-                if (trilha in JOGOS.resolucao_problemas.DADOS) return JOGOS.resolucao_problemas.gerarProblema(trilha, atividade);
-                if (trilha in JOGOS.estatistica.DADOS) return JOGOS.estatistica.gerarProblema(trilha, atividade);
-                if (trilha in JOGOS.probabilidade.DADOS) return JOGOS.probabilidade.gerarProblema(trilha, atividade);
+            gerador: (trilha, atividade, idade) => { // Adicionado 'idade' como parâmetro
+                if (trilha in JOGOS.operacoes.DADOS) return JOGOS.operacoes.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.fracoes.DADOS) return JOGOS.fracoes.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.geometria.DADOS) return JOGOS.geometria.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.medidas.DADOS) return JOGOS.medidas.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.resolucao_problemas.DADOS) return JOGOS.resolucao_problemas.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.estatistica.DADOS) return JOGOS.estatistica.gerarProblema(trilha, atividade, idade);
+                if (trilha in JOGOS.probabilidade.DADOS) return JOGOS.probabilidade.gerarProblema(trilha, atividade, idade);
             }
         },
         portugues: {
@@ -107,7 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function gerarProblema() {
         estado.jogoAtivo = true;
-        estado.problemaAtual = DADOS_JOGOS[estado.materiaAtual].gerador(estado.trilhaAtual, estado.atividadeAtual);
+        const idade = estado.usuarioAtual ? estado.usuarioAtual.idade : 8; // Usa idade do usuário ou 8 como padrão
+        estado.problemaAtual = DADOS_JOGOS[estado.materiaAtual].gerador(estado.trilhaAtual, estado.atividadeAtual, idade);
         
         const problema = estado.problemaAtual;
         opcoesEl.innerHTML = '';
@@ -382,21 +383,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function criarNovoUsuario() {
         tocarSom(somClique);
         const nome = prompt("Qual é o seu nome, jovem aventureiro(a)?");
-        if (nome && nome.trim() !== "") {
-            const novoUsuario = {
-                id: Date.now(),
-                nome: nome.trim(),
-                pontos: 0,
-                brindesComprados: []
-            };
-            estado.usuarios.push(novoUsuario);
-            salvarEstado();
-            renderizarPerfis();
-            renderizarUsuariosAdmin();
-            mascoteFala(`Seja bem-vindo(a), ${nome.trim()}!`);
-        } else {
+        if (!nome || nome.trim() === "") {
             mascoteFala("Para criar um perfil, preciso saber seu nome!");
+            return;
         }
+
+        let idadeInput = prompt(`Olá, ${nome.trim()}! Quantos anos você tem?`);
+        let idade = parseInt(idadeInput, 10);
+
+        if (isNaN(idade) || idade < 4 || idade > 12) {
+            mascoteFala("Por favor, insira uma idade válida (entre 4 e 12 anos).");
+            return;
+        }
+
+        const novoUsuario = {
+            id: Date.now(),
+            nome: nome.trim(),
+            idade: idade,
+            pontos: 0,
+            brindesComprados: []
+        };
+        estado.usuarios.push(novoUsuario);
+        salvarEstado();
+        renderizarPerfis();
+        renderizarUsuariosAdmin();
+        mascoteFala(`Seja bem-vindo(a), ${nome.trim()}!`);
     }
 
     function selecionarUsuario(id) {
