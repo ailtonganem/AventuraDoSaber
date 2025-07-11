@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const JOGOS = window.AventuraDoSaber;
     const CONFIG = window.AventuraDoSaber.config;
 
-    // --- Módulos do Firebase (disponibilizados pelo index.html) ---
+    // --- Módulos do Firebase ---
     const { initializeApp } = window.firebase;
     const { getAuth, signInAnonymously, signInWithCustomToken } = window.firebase;
     const { getFirestore, setLogLevel, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } = window.firebase.firestore;
@@ -16,16 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         matematica: {
             nome: "Ilha dos Números", cor: "#0077be",
             trilhas: { ...JOGOS.operacoes.DADOS, ...JOGOS.fracoes.DADOS, ...JOGOS.geometria.DADOS, ...JOGOS.medidas.DADOS, ...JOGOS.resolucao_problemas.DADOS, ...JOGOS.estatistica.DADOS, ...JOGOS.probabilidade.DADOS },
-            gerador: (trilha, atividade, idade) => {
-                if (trilha in JOGOS.operacoes.DADOS) return JOGOS.operacoes.gerarProblema(trilha, atividade, idade);
-                if (trilha in JOGOS.fracoes.DADOS) return JOGOS.fracoes.gerarProblema(trilha, atividade, idade);
-                if (trilha in JOGOS.geometria.DADOS) return JOGOS.geometria.gerarProblema(trilha, atividade, idade);
-                if (trilha in JOGOS.medidas.DADOS) return JOGOS.medidas.gerarProblema(trilha, atividade, idade);
-                if (trilha in JOGOS.resolucao_problemas.DADOS) return JOGOS.resolucao_problemas.gerarProblema(trilha, atividade, idade);
-                if (trilha in JOGOS.estatistica.DADOS) return JOGOS.estatistica.gerarProblema(trilha, atividade, idade);
-                if (trilha in JOGOS.probabilidade.DADOS) return JOGOS.probabilidade.gerarProblema(trilha, atividade, idade);
-                return JOGOS.operacoes.gerarProblema(trilha, atividade, idade); // Fallback
-            }
+            gerador: (trilha, atividade, idade) => JOGOS.operacoes.gerarProblema(trilha, atividade, idade)
         },
         portugues: {
             nome: "Ilha das Palavras", cor: "#c94c4c",
@@ -67,6 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const perfisContainerEl = document.querySelector('.perfis-container');
     const listaUsuariosAdminEl = document.getElementById('lista-usuarios-admin');
     const botaoLojaEl = document.getElementById('botao-loja');
+    const botaoPerfilJogadorEl = document.getElementById('botao-perfil-jogador');
     const lojaContainerEl = document.getElementById('loja-container');
     const avatarBaseEl = document.getElementById('avatar-base');
     const avatarCabecaEl = document.getElementById('avatar-acessorio-cabeca');
@@ -75,8 +67,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const pontosProblemaEl = document.getElementById('pontos-problema');
     const botaoAjudaEl = document.getElementById('botao-ajuda');
     const botaoPularEl = document.getElementById('botao-pular');
+    const inputNomePerfilEl = document.getElementById('input-nome-perfil');
+    const inputIdadePerfilEl = document.getElementById('input-idade-perfil');
+    const botaoSalvarPerfilEl = document.getElementById('botao-salvar-perfil');
+    const avatarBasePerfilEl = document.getElementById('avatar-base-perfil');
+    const avatarCabecaPerfilEl = document.getElementById('avatar-cabeca-perfil');
+    const avatarRostoPerfilEl = document.getElementById('avatar-rosto-perfil');
+    const avatarCompanheiroPerfilEl = document.getElementById('avatar-companheiro-perfil');
 
-    // --- Estado da Aplicação (agora sincronizado com o Firestore) ---
+    // --- Estado da Aplicação ---
     let estado = { 
         viewAtual: 'configuracoes-view', 
         materiaAtual: null, 
@@ -84,9 +83,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         atividadeAtual: null, 
         problemaAtual: null,
         jogoAtivo: false, 
-        usuarioAtual: null, // Guarda o objeto do usuário logado
-        usuarios: [], // Cache local dos usuários para renderização
-        brindes: []  // Cache local dos brindes para renderização
+        usuarioAtual: null,
+        usuarios: [],
+        brindes: [] 
     };
 
     // --- Sons ---
@@ -99,11 +98,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!estado.usuarioAtual) return;
         
         const novosPontos = Math.max(0, estado.usuarioAtual.pontos + quantidade);
-        estado.usuarioAtual.pontos = novosPontos; // Atualiza o estado local para UI imediata
+        estado.usuarioAtual.pontos = novosPontos;
         atualizarPontosDisplay();
 
-        // Atualiza o banco de dados em segundo plano
-        const userDocRef = doc(db, `artifacts/${appId}/users/${estado.usuarioAtual.id}`);
+        const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
         await updateDoc(userDocRef, { pontos: novosPontos });
     }
 
@@ -179,7 +177,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         allViews.forEach(v => v.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
         configurarBotoesVoltar(); 
-        botaoLojaEl.style.display = estado.usuarioAtual && id === 'mapa-view' ? 'flex' : 'none';
+        const logadoNoMapa = estado.usuarioAtual && id === 'mapa-view';
+        botaoLojaEl.style.display = logadoNoMapa ? 'flex' : 'none';
+        botaoPerfilJogadorEl.style.display = logadoNoMapa ? 'flex' : 'none';
     };
     const definirCorAtiva = (cor) => { document.documentElement.style.setProperty('--cor-ativa', cor); };
     const tocarSom = (som) => { som.currentTime = 0; som.play().catch(e => console.log("Erro ao tocar som:", e)); };
@@ -205,9 +205,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        let genero = prompt("Para o seu avatar, você escolhe 'menino' ou 'menina'?").toLowerCase();
+        if (genero !== 'menino' && genero !== 'menina') {
+            mascoteFala("Por favor, escolha 'menino' ou 'menina'.");
+            return;
+        }
+
         const novoUsuario = {
             nome: nome.trim(),
             idade: idade,
+            avatar: genero === 'menina' ? '👩‍🎓' : '🧑‍🎓',
             pontos: 0,
             brindesComprados: []
         };
@@ -241,7 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         estado.usuarios.forEach(usuario => {
             const perfilButton = document.createElement('button');
             perfilButton.className = 'botao-perfil';
-            perfilButton.innerHTML = `<span class="perfil-icone">🧑‍🎓</span><span class="perfil-nome">${usuario.nome}</span>`;
+            perfilButton.innerHTML = `<span class="perfil-icone">${usuario.avatar || '🧑‍🎓'}</span><span class="perfil-nome">${usuario.nome}</span>`;
             perfilButton.addEventListener('click', () => selecionarUsuario(usuario.id));
             perfisContainerEl.appendChild(perfilButton);
         });
@@ -254,16 +261,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     function renderizarAvatar() {
-        avatarBaseEl.textContent = '🧑‍🎓';
+        const avatarBase = (estado.usuarioAtual && estado.usuarioAtual.avatar) ? estado.usuarioAtual.avatar : '🦉';
+        avatarBaseEl.textContent = avatarBase;
         avatarCabecaEl.textContent = '';
         avatarRostoEl.textContent = '';
         avatarCompanheiroEl.textContent = '';
         document.body.style.backgroundImage = '';
 
-        if (!estado.usuarioAtual) {
-            avatarBaseEl.textContent = '🦉';
-            return;
-        }
+        if (!estado.usuarioAtual) return;
 
         estado.usuarioAtual.brindesComprados.forEach(brindeId => {
             const brinde = estado.brindes.find(b => b.id === brindeId);
@@ -283,6 +288,67 @@ document.addEventListener('DOMContentLoaded', async () => {
                     break;
             }
         });
+    }
+
+    // --- Lógica da Página de Perfil ---
+    function mostrarPerfil() {
+        if (!estado.usuarioAtual) return;
+        tocarSom(somClique);
+        
+        inputNomePerfilEl.value = estado.usuarioAtual.nome;
+        inputIdadePerfilEl.value = estado.usuarioAtual.idade;
+        
+        renderizarAvatarPerfil();
+        mostrarView('perfil-view');
+        mascoteFala("Aqui você pode ver e editar seu perfil!");
+    }
+
+    function renderizarAvatarPerfil() {
+        const avatarBase = (estado.usuarioAtual && estado.usuarioAtual.avatar) ? estado.usuarioAtual.avatar : '🦉';
+        avatarBasePerfilEl.textContent = avatarBase;
+        avatarCabecaPerfilEl.textContent = '';
+        avatarRostoPerfilEl.textContent = '';
+        avatarCompanheiroPerfilEl.textContent = '';
+
+        if (!estado.usuarioAtual) return;
+
+        estado.usuarioAtual.brindesComprados.forEach(brindeId => {
+            const brinde = estado.brindes.find(b => b.id === brindeId);
+            if (!brinde) return;
+            const emoji = (brinde.nome.match(/(\p{Emoji_Presentation})/gu) || [''])[0];
+            switch(brinde.slot) {
+                case 'base': avatarBasePerfilEl.textContent = emoji; break;
+                case 'cabeca': avatarCabecaPerfilEl.textContent = emoji; break;
+                case 'rosto': avatarRostoPerfilEl.textContent = emoji; break;
+                case 'companheiro': avatarCompanheiroPerfilEl.textContent = emoji; break;
+            }
+        });
+    }
+
+    async function salvarPerfil() {
+        const novoNome = inputNomePerfilEl.value.trim();
+        const novaIdade = parseInt(inputIdadePerfilEl.value, 10);
+
+        if (!novoNome) {
+            alert("O nome não pode ficar em branco!");
+            return;
+        }
+        if (isNaN(novaIdade) || novaIdade < 4 || novaIdade > 12) {
+            alert("Por favor, insira uma idade válida entre 4 e 12 anos.");
+            return;
+        }
+
+        estado.usuarioAtual.nome = novoNome;
+        estado.usuarioAtual.idade = novaIdade;
+
+        const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
+        await updateDoc(userDocRef, {
+            nome: novoNome,
+            idade: novaIdade
+        });
+
+        mascoteFala("Seu perfil foi salvo com sucesso!");
+        setTimeout(() => mostrarView('mapa-view'), 1500);
     }
 
     // --- Lógica da Loja com Firestore ---
@@ -307,36 +373,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- Lógica de Administração com Firestore ---
-    async function adicionarBrinde() {
-        const nome = inputNomeBrindeEl.value.trim();
-        const custo = parseInt(inputCustoBrindeEl.value, 10);
-        if (!nome || isNaN(custo) || custo <= 0) {
-            alert("Por favor, preencha o nome e um custo válido para o brinde.");
-            return;
-        }
-        const novoBrinde = { id: Date.now(), nome, custo, tipo: 'custom', slot: 'rosto' };
-        
-        await addDoc(collection(db, `artifacts/${appId}/public/data/brindes`), novoBrinde);
-
-        inputNomeBrindeEl.value = ''; inputCustoBrindeEl.value = '';
-        mascoteFala("Novo brinde adicionado com sucesso!");
-    }
-
-    async function removerBrinde(firestoreId) {
-        if (confirm("Tem certeza que deseja remover este brinde?")) {
-            await deleteDoc(doc(db, `artifacts/${appId}/public/data/brindes`, firestoreId));
-            mascoteFala("Brinde removido.");
-        }
-    }
-    
-    async function removerUsuario(id) {
-        if (confirm("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.")) {
-            await deleteDoc(doc(db, `artifacts/${appId}/users`, id));
-            mascoteFala("Usuário removido.");
-        }
-    }
-
     // --- Inicialização e Configuração do Firebase ---
     async function inicializarFirebase() {
         try {
@@ -354,8 +390,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await signInAnonymously(auth);
             }
             userId = auth.currentUser?.uid || crypto.randomUUID();
-            console.log("Firebase inicializado e usuário autenticado:", userId);
-
             iniciarListenersFirestore();
 
         } catch (error) {
@@ -373,14 +407,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             estado.usuarios = usuariosTemp;
             renderizarPerfis();
-            renderizarUsuariosAdmin();
+            // renderizarUsuariosAdmin();
         });
 
         const brindesCollectionRef = collection(db, `artifacts/${appId}/public/data/brindes`);
         onSnapshot(brindesCollectionRef, (snapshot) => {
             const brindesTemp = [];
             if (snapshot.empty) {
-                // Se não houver brindes no DB, adiciona os padrões
                 CONFIG.BRINDES_PADRAO.forEach(async (brinde) => {
                     await addDoc(brindesCollectionRef, brinde);
                 });
@@ -391,7 +424,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
             estado.brindes = brindesTemp;
-            renderizarBrindesAdmin();
+            // renderizarBrindesAdmin();
             if (estado.viewAtual === 'loja-view') {
                 renderizarLoja();
             }
@@ -425,6 +458,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         botaoAddBrindeEl.addEventListener('click', adicionarBrinde);
         botaoLojaEl.addEventListener('click', mostrarLoja);
+        botaoPerfilJogadorEl.addEventListener('click', mostrarPerfil);
+        botaoSalvarPerfilEl.addEventListener('click', salvarPerfil);
 
         botaoAjudaEl.addEventListener('click', async () => {
             if (!estado.jogoAtivo || !estado.problemaAtual) return;
