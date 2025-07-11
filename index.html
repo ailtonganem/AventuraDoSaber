@@ -28,6 +28,7 @@
                 <div id="pontuacao">
                     ⭐ Pontos: <span id="pontos-display">0</span>
                 </div>
+                <div id="botao-perfil-jogador" class="hud-botao" style="display: none;">👤</div>
                 <div id="botao-loja" class="hud-botao" style="display: none;">🛍️</div>
                 <div id="botao-configuracoes" class="hud-botao">⚙️</div>
             </div>
@@ -145,24 +146,45 @@
                 </div>
             </div>
 
+            <!-- Tela 8: Perfil do Jogador -->
+            <div id="perfil-view" class="view">
+                <button class="botao-voltar" id="voltar-perfil-para-mapa">⬅</button>
+                <h2>Meu Perfil</h2>
+                <div class="perfil-container">
+                    <div class="perfil-avatar-grande">
+                        <div id="avatar-display-perfil">
+                            <div class="avatar-layer-grande" id="avatar-companheiro-perfil"></div>
+                            <div class="avatar-layer-grande" id="avatar-base-perfil">🧑‍🎓</div>
+                            <div class="avatar-layer-grande" id="avatar-cabeca-perfil"></div>
+                            <div class="avatar-layer-grande" id="avatar-rosto-perfil"></div>
+                        </div>
+                    </div>
+                    <div class="perfil-dados">
+                        <div class="form-grupo">
+                            <label for="input-nome-perfil">Nome:</label>
+                            <input type="text" id="input-nome-perfil">
+                        </div>
+                        <div class="form-grupo">
+                            <label for="input-idade-perfil">Idade:</label>
+                            <input type="number" id="input-idade-perfil" min="4" max="12">
+                        </div>
+                        <button id="botao-salvar-perfil" class="botao-acao-jogo">Salvar Alterações</button>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
-    <!-- Scripts do Firebase (Adicionados) -->
+    <!-- Scripts do Firebase -->
     <script type="module">
-        // Importa as funções necessárias dos SDKs do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, setLogLevel, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
       
-        // Disponibiliza as funções globalmente para que o main.js possa usá-las
         window.firebase = {
-            initializeApp,
-            getAuth,
-            signInAnonymously,
-            signInWithCustomToken,
-            getFirestore,
-            setLogLevel
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
+            firestore: { getFirestore, setLogLevel, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc }
         };
     </script>
 
