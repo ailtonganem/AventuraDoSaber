@@ -317,7 +317,8 @@ main {
 #opcoes-resposta { 
     margin-top: 25px; 
     display: flex; 
-    justify-content: center; 
+    justify-content: center;
+    align-items: center;
     gap: 20px; 
     flex-wrap: wrap; 
 }
@@ -368,6 +369,16 @@ main {
 /* ==========================================================================
    6. Componentes Específicos de Jogos
    ========================================================================== */
+
+/* --- Container para botões de múltipla escolha (usado com visuais) --- */
+.botoes-container-multipla-escolha {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 20px;
+}
 
 /* --- Jogo de Frações --- */
 .fracao-visual {
@@ -513,7 +524,7 @@ main {
 .prato-balanca span { font-size: 2.5rem; }
 
 /* --- Jogo de Sólidos 3D --- */
-#opcoes-resposta.layout-solido { padding: 20px; perspective: 1000px; }
+#opcoes-resposta.layout-solido { padding: 20px; perspective: 1000px; flex-direction: column; }
 .container-solido { width: 200px; height: 200px; margin: 20px auto; position: relative; transform-style: preserve-3d; animation: girar-solido 15s infinite linear; }
 @keyframes girar-solido { from { transform: rotateY(0deg) rotateX(10deg); } to { transform: rotateY(360deg) rotateX(10deg); } }
 .solido { transform-style: preserve-3d; width: 100%; height: 100%; }
