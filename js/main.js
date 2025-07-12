@@ -4,7 +4,7 @@
  * Responsável pela inicialização do Firebase, gerenciamento de estado, navegação
  * entre telas e lógica central do jogo.
  *
- * Versão 2.1 - Correção do acesso a variáveis globais e implementação de modais.
+ * Versão 2.2 - Refatoração da inicialização do Firebase e correção de caminhos de importação.
  */
 
 // --- Módulos do Firebase ---
@@ -18,20 +18,41 @@ import { DADOS_CIENCIAS, gerarProblemaCiencias } from './ciencias.js';
 import { DADOS_GEOGRAFIA, gerarProblemaGeografia } from './geografia.js';
 import { DADOS_HISTORIA, gerarProblemaHistoria } from './historia.js';
 import { DADOS_INGLES, gerarProblemaIngles } from './ingles.js';
-import { DADOS_ORTOGRAFIA, gerarProblemaOrtografia } from './portugues/ortografia.js';
-import { DADOS_OPERACOES, gerarProblemaOperacoes } from './matematica/operacoes.js';
-import { DADOS_FRACOES, gerarProblemaFracoes } from './matematica/fracoes.js';
-import { DADOS_GEOMETRIA, gerarProblemaGeometria } from './matematica/geometria.js';
-import { DADOS_MEDIDAS, gerarProblemaMedidas } from './matematica/medidas.js';
-import { DADOS_ESTATISTICA, gerarProblemaEstatistica } from './matematica/estatistica.js';
-import { DADOS_PROBABILIDADE, gerarProblemaProbabilidade } from './matematica/probabilidade.js';
-import { DADOS_RESOLUCAO_PROBLEMAS, gerarProblemaResolucaoProblemas } from './matematica/resolucao_problemas.js';
+import { DADOS_ORTOGRAFIA, gerarProblemaOrtografia } from './ortografia.js';
+import { DADOS_OPERACOES, gerarProblemaOperacoes } from './operacoes.js';
+import { DADOS_FRACOES, gerarProblemaFracoes } from './fracoes.js';
+import { DADOS_GEOMETRIA, gerarProblemaGeometria } from './geometria.js';
+import { DADOS_MEDIDAS, gerarProblemaMedidas } from './medidas.js';
+import { DADOS_ESTATISTICA, gerarProblemaEstatistica } from './estatistica.js';
+import { DADOS_PROBABILIDADE, gerarProblemaProbabilidade } from './probabilidade.js';
+import { DADOS_RESOLUCAO_PROBLEMAS, gerarProblemaResolucaoProblemas } from './resolucao_problemas.js';
+
+/**
+ * =========================================================================
+ * ATENÇÃO: CONFIGURAÇÃO DO FIREBASE
+ * =========================================================================
+ * Substitua os valores abaixo pelas credenciais do seu projeto no Firebase.
+ * Estas credenciais são encontradas nas configurações do seu projeto no console do Firebase.
+ * Exemplo: Em "Configurações do projeto" > "Geral" > "Seus apps" > "SDK do Firebase".
+ */
+const firebaseConfig = {
+    apiKey: "SUA_API_KEY",
+    authDomain: "SEU_AUTH_DOMAIN",
+    projectId: "SEU_PROJECT_ID",
+    storageBucket: "SEU_STORAGE_BUCKET",
+    messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+    appId: "SEU_APP_ID"
+};
+
+// ATENÇÃO: ID do Artefato (se aplicável, para multi-inquilino)
+// Se sua estrutura de dados não depende de um 'appId' dinâmico, pode deixar como está.
+const APP_ID = firebaseConfig.appId; // Usando o appId da configuração por padrão.
 
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- Variáveis Globais do App ---
-    let auth, db, userId, appId;
+    let auth, db, userId;
     let estado = {
         viewAtual: 'configuracoes-view',
         materiaAtual: null,
@@ -145,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const novosPontos = Math.max(0, estado.usuarioAtual.pontos + quantidade);
         estado.usuarioAtual.pontos = novosPontos;
         atualizarPontosDisplay();
-        const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
+        const userDocRef = doc(db, `artifacts/${APP_ID}/users`, estado.usuarioAtual.id);
         await updateDoc(userDocRef, { pontos: novosPontos });
     }
 
@@ -252,7 +273,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function gerarProblema() {
         estado.jogoAtivo = true;
         const idade = estado.usuarioAtual ? estado.usuarioAtual.idade : 8;
-        estado.problemaAtual = DADOS_JOGOS[estado.materiaAtual].gerador(estado.trilhaAtual, estado.atividadeAtual, idade);
+        const gerador = DADOS_JOGOS[estado.materiaAtual]?.gerador;
+        
+        if (typeof gerador !== 'function') {
+            console.error("Gerador de problemas não encontrado para a matéria:", estado.materiaAtual);
+            mascoteFala("Ops! Não encontrei um gerador de desafios para esta matéria.");
+            mostrarView('atividades-view');
+            return;
+        }
+
+        estado.problemaAtual = gerador(estado.trilhaAtual, estado.atividadeAtual, idade);
         
         const problema = estado.problemaAtual;
         if (!problema) {
@@ -268,24 +298,36 @@ document.addEventListener('DOMContentLoaded', () => {
         botaoPularEl.disabled = false;
         opcoesEl.className = 'opcoes-resposta';
 
-        if (problema.objetosHTML) {
-             enunciadoEl.innerHTML = problema.enunciado;
-             opcoesEl.innerHTML = problema.objetosHTML;
-             if(problema.tipo === 'keypad_input') opcoesEl.classList.add('layout-keypad');
-             if(problema.tipo === 'drag_classificacao') opcoesEl.classList.add('layout-classificacao');
-             if(problema.tipo === 'relogio_interativo') opcoesEl.classList.add('layout-relogio');
-             if(problema.tipo === 'drag_drop_dinheiro') opcoesEl.classList.add('layout-dinheiro');
-             if(problema.tipo === 'clique_em_objetos') opcoesEl.classList.add('layout-objetos');
-             if(problema.tipo === 'multipla_escolha' && problema.objetosHTML) opcoesEl.classList.add('layout-solido');
-
-        } else {
-             enunciadoEl.innerHTML = problema.enunciado;
+        // Renderização baseada no tipo de problema
+        enunciadoEl.innerHTML = problema.enunciado;
+        if (problema.opcoes && !problema.objetosHTML) {
              gerarBotoesDeOpcao(problema.opcoes);
+        } else if (problema.objetosHTML) {
+             opcoesEl.innerHTML = problema.objetosHTML;
+             // Adiciona classes de layout específicas para cada tipo de jogo interativo
+             const layoutMap = {
+                 'keypad_input': 'layout-keypad',
+                 'drag_classificacao': 'layout-classificacao',
+                 'relogio_interativo': 'layout-relogio',
+                 'drag_drop_dinheiro': 'layout-dinheiro',
+                 'clique_em_objetos': 'layout-objetos',
+                 'multipla_escolha': 'layout-solido' // Usado quando há objetosHTML e opções
+             };
+             if (layoutMap[problema.tipo]) {
+                 opcoesEl.classList.add(layoutMap[problema.tipo]);
+             }
+             // Se for múltipla escolha mas com visual (ex: sólidos), gera os botões também
+             if (problema.tipo === 'multipla_escolha' && problema.opcoes) {
+                gerarBotoesDeOpcao(problema.opcoes);
+             }
         }
     }
 
     function gerarBotoesDeOpcao(opcoes) {
-        opcoesEl.innerHTML = '';
+        // Se já existem elementos (como um visual 3D), os botões são adicionados depois
+        const containerParaBotoes = document.createElement('div');
+        containerParaBotoes.className = 'botoes-container-multipla-escolha';
+
         const opcoesEmbaralhadas = [...opcoes].sort(() => Math.random() - 0.5);
         opcoesEmbaralhadas.forEach(opcao => {
             const botao = document.createElement('button');
@@ -296,8 +338,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const acertou = String(botao.dataset.valor) === String(estado.problemaAtual.respostaCorreta);
                 resolverProblema(acertou, botao);
             };
-            opcoesEl.appendChild(botao);
+            containerParaBotoes.appendChild(botao);
         });
+        opcoesEl.appendChild(containerParaBotoes);
     }
 
     async function resolverProblema(acertou, botaoClicado = null) {
@@ -320,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mascoteFala(`Ops! A resposta correta era ${estado.problemaAtual.respostaCorreta}. Você perdeu ${pontosPerdidos} pontos.`);
             if (botaoClicado) {
                 botaoClicado.classList.add('incorreta');
+                // Encontra e destaca a resposta correta em qualquer container
                 document.querySelectorAll('.botao-resposta').forEach(b => {
                     if (String(b.dataset.valor) === String(estado.problemaAtual.respostaCorreta)) b.classList.add('correta');
                 });
@@ -342,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewAtiva.classList.add('active');
         } else {
             console.error(`View com id "${id}" não encontrada.`);
-            document.getElementById('mapa-view').classList.add('active');
+            document.getElementById('mapa-view').classList.add('active'); // Fallback
         }
         
         const logadoNoMapa = estado.usuarioAtual && id === 'mapa-view';
@@ -521,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            await addDoc(collection(db, `artifacts/${appId}/users`), novoUsuario);
+            await addDoc(collection(db, `artifacts/${APP_ID}/users`), novoUsuario);
             mascoteFala(`Seja bem-vindo(a), ${nome.trim()}!`);
         } catch (error) {
             console.error("Erro ao criar novo usuário:", error);
@@ -573,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
         estado.usuarioAtual.idade = novaIdade;
         
         try {
-            const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
+            const userDocRef = doc(db, `artifacts/${APP_ID}/users`, estado.usuarioAtual.id);
             await updateDoc(userDocRef, { nome: novoNome, idade: novaIdade });
             mascoteFala("Seu perfil foi salvo com sucesso!");
             setTimeout(() => mostrarView('mapa-view'), 1500);
@@ -629,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderizarAvatar();
             
             try {
-                const userDocRef = doc(db, `artifacts/${appId}/users`, estado.usuarioAtual.id);
+                const userDocRef = doc(db, `artifacts/${APP_ID}/users`, estado.usuarioAtual.id);
                 await updateDoc(userDocRef, {
                     pontos: novosPontos,
                     brindesComprados: novosBrindes
@@ -692,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const novoBrinde = { id: Date.now(), nome, custo, tipo: 'custom', slot: 'rosto' }; 
         try {
-            await addDoc(collection(db, `artifacts/${appId}/public/data/brindes`), novoBrinde);
+            await addDoc(collection(db, `artifacts/${APP_ID}/public/data/brindes`), novoBrinde);
             inputNomeBrindeEl.value = '';
             inputCustoBrindeEl.value = '';
             mascoteFala("Novo brinde adicionado com sucesso!");
@@ -705,7 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function removerBrinde(firestoreId) {
         if (await exibirConfirmacao("Tem certeza que deseja remover este brinde?", "Remover Brinde")) {
             try {
-                await deleteDoc(doc(db, `artifacts/${appId}/public/data/brindes`, firestoreId));
+                await deleteDoc(doc(db, `artifacts/${APP_ID}/public/data/brindes`, firestoreId));
                 mascoteFala("Brinde removido.");
             } catch (error) {
                 console.error("Erro ao remover brinde:", error);
@@ -717,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function removerUsuario(id) {
         if (await exibirConfirmacao("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.", "Remover Usuário")) {
             try {
-                await deleteDoc(doc(db, `artifacts/${appId}/users`, id));
+                await deleteDoc(doc(db, `artifacts/${APP_ID}/users`, id));
                 mascoteFala("Usuário removido.");
             } catch (error) {
                 console.error("Erro ao remover usuário:", error);
@@ -735,18 +779,8 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function inicializarFirebase() {
         try {
-            // As variáveis __app_id e __firebase_config são injetadas pelo ambiente.
-            appId = window.appId;
-            const firebaseConfigStr = window.firebaseConfig;
-            
-            if (!firebaseConfigStr || firebaseConfigStr === '{{ an_firebase_config }}') {
-                throw new Error("Configuração do Firebase não fornecida ou inválida.");
-            }
-            
-            const firebaseConfig = JSON.parse(firebaseConfigStr);
-
-            if (!firebaseConfig.projectId) {
-                 throw new Error("ID do Projeto Firebase ausente na configuração.");
+            if (!firebaseConfig || !firebaseConfig.projectId || firebaseConfig.apiKey === "SUA_API_KEY") {
+                throw new Error("Configuração do Firebase não fornecida ou inválida. Verifique o objeto 'firebaseConfig' no arquivo main.js.");
             }
 
             const app = initializeApp(firebaseConfig);
@@ -754,15 +788,12 @@ document.addEventListener('DOMContentLoaded', () => {
             auth = getAuth(app);
             setLogLevel('debug');
 
-            const authToken = window.authToken;
-            if (authToken && authToken !== '{{ auth_token }}') {
-                await signInWithCustomToken(auth, authToken);
-            } else {
-                await signInAnonymously(auth);
-            }
+            // Autenticação anônima por padrão
+            await signInAnonymously(auth);
+
             userId = auth.currentUser?.uid;
             if (!userId) {
-                throw new Error("Falha na autenticação do usuário.");
+                throw new Error("Falha na autenticação do usuário anônimo.");
             }
             
             iniciarListenersFirestore();
@@ -771,7 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("ERRO CRÍTICO AO INICIALIZAR FIREBASE:", error);
             const appContainer = document.getElementById('app-container');
             if (appContainer) {
-                appContainer.innerHTML = `<div style="text-align: center; padding: 50px; font-family: sans-serif; color: #D8000C; background-color: #FFBABA; border: 1px solid; margin: 10px 0px; padding:15px 10px 15px 50px; background-repeat: no-repeat; background-position: 10px center;"><h1>Erro de Conexão</h1><p>Não foi possível conectar ao servidor do jogo. Por favor, recarregue a página.</p><p><i>Detalhe do erro: ${error.message}</i></p></div>`;
+                appContainer.innerHTML = `<div style="text-align: center; padding: 50px; font-family: sans-serif; color: #D8000C; background-color: #FFBABA; border: 1px solid; margin: 10px 0px; padding:15px 10px 15px 50px; background-repeat: no-repeat; background-position: 10px center;"><h1>Erro de Conexão</h1><p>Não foi possível conectar ao servidor do jogo. Verifique as configurações do Firebase no console.</p><p><i>Detalhe do erro: ${error.message}</i></p></div>`;
             }
         }
     }
@@ -781,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function iniciarListenersFirestore() {
         // Listener para a coleção de usuários
-        const usersCollectionRef = collection(db, `artifacts/${appId}/users`);
+        const usersCollectionRef = collection(db, `artifacts/${APP_ID}/users`);
         onSnapshot(usersCollectionRef, (snapshot) => {
             const usuariosTemp = [];
             snapshot.forEach(doc => {
@@ -798,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Listener para a coleção de brindes
-        const brindesCollectionRef = collection(db, `artifacts/${appId}/public/data/brindes`);
+        const brindesCollectionRef = collection(db, `artifacts/${APP_ID}/public/data/brindes`);
         onSnapshot(brindesCollectionRef, (snapshot) => {
             let brindesTemp = [];
             if (snapshot.empty) {
