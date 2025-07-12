@@ -1,23 +1,23 @@
 /**
  * main.js
  * Ponto de entrada e orquestrador principal da aplicação "Aventura do Saber".
- * Versão 4.0 - Estrutura de arquivos simplificada e funcional.
+ * Versão 5.0 - Correção definitiva dos caminhos de importação para a estrutura de pastas correta.
  */
 
 // --- Módulos de Configuração e Matérias ---
-import { BRINDES_PADRAO } from './config.js';
-import { DADOS_CIENCIAS, gerarProblemaCiencias } from './ciencias.js';
-import { DADOS_GEOGRAFIA, gerarProblemaGeografia } from './geografia.js';
-import { DADOS_HISTORIA, gerarProblemaHistoria } from './historia.js';
-import { DADOS_INGLES, gerarProblemaIngles } from './ingles.js';
-import { DADOS_ORTOGRAFIA, gerarProblemaOrtografia } from './ortografia.js';
-import { DADOS_OPERACOES, gerarProblemaOperacoes } from './operacoes.js';
-import { DADOS_FRACOES, gerarProblemaFracoes } from './fracoes.js';
-import { DADOS_GEOMETRIA, gerarProblemaGeometria } from './geometria.js';
-import { DADOS_MEDIDAS, gerarProblemaMedidas } from './medidas.js';
-import { DADOS_ESTATISTICA, gerarProblemaEstatistica } from './estatistica.js';
-import { DADOS_PROBABILIDADE, gerarProblemaProbabilidade } from './probabilidade.js';
-import { DADOS_RESOLUCAO_PROBLEMAS, gerarProblemaResolucaoProblemas } from './resolucao_problemas.js';
+import { BRINDES_PADRAO } from '../config.js';
+import { DADOS_CIENCIAS, gerarProblemaCiencias } from '../ciencias.js';
+import { DADOS_GEOGRAFIA, gerarProblemaGeografia } from '../geografia.js';
+import { DADOS_HISTORIA, gerarProblemaHistoria } from '../historia.js';
+import { DADOS_INGLES, gerarProblemaIngles } from '../ingles.js';
+import { DADOS_ORTOGRAFIA, gerarProblemaOrtografia } from '../ortografia.js';
+import { DADOS_OPERACOES, gerarProblemaOperacoes } from '../operacoes.js';
+import { DADOS_FRACOES, gerarProblemaFracoes } from '../fracoes.js';
+import { DADOS_GEOMETRIA, gerarProblemaGeometria } from '../geometria.js';
+import { DADOS_MEDIDAS, gerarProblemaMedidas } from '../medidas.js';
+import { DADOS_ESTATISTICA, gerarProblemaEstatistica } from '../estatistica.js';
+import { DADOS_PROBABILIDADE, gerarProblemaProbabilidade } from '../probabilidade.js';
+import { DADOS_RESOLUCAO_PROBLEMAS, gerarProblemaResolucaoProblemas } from '../resolucao_problemas.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -112,9 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Sons ---
-    const somAcerto = new Audio('assets/sounds/acerto.mp3');
-    const somErro = new Audio('assets/sounds/erro.mp3');
-    const somClique = new Audio('assets/sounds/clique.mp3');
+    const somAcerto = new Audio('../assets/sounds/acerto.mp3');
+    const somErro = new Audio('../assets/sounds/erro.mp3');
+    const somClique = new Audio('../assets/sounds/clique.mp3');
 
     // ==========================================================================
     // --- LÓGICA DE DADOS LOCAL (LocalStorage) ---
