@@ -16,26 +16,16 @@
         <header id="hud">
             <div class="mascote-container">
                 <div id="avatar-display">
-                    <div class="avatar-layer" id="avatar-companheiro"></div>
                     <div class="avatar-layer" id="avatar-base">🧑‍🎓</div>
-                    <div class="avatar-layer" id="avatar-acessorio-cabeca"></div>
-                    <div class="avatar-layer" id="avatar-acessorio-rosto"></div>
                 </div>
                 <div id="balao-fala" class="balao">Vamos começar a explorar!</div>
             </div>
-            <div id="hud-direita">
-                <div id="pontuacao">
-                    ⭐ Pontos: <span id="pontos-display">0</span>
-                </div>
-                <div id="botao-perfil-jogador" class="hud-botao" style="display: none;">👤</div>
-                <div id="botao-loja" class="hud-botao" style="display: none;">🛍️</div>
-                <div id="botao-configuracoes" class="hud-botao">⚙️</div>
-            </div>
+            <!-- Seção de botões do HUD removida -->
         </header>
 
         <main>
-            <!-- Tela 1: O Mapa das Ilhas -->
-            <div id="mapa-view" class="view">
+            <!-- Tela 1: O Mapa das Ilhas (Tela Inicial) -->
+            <div id="mapa-view" class="view active">
                 <h1>Mapa da Aventura</h1>
                 <div class="mapa-grid">
                     <div class="ilha" id="ilha-matematica">
@@ -49,18 +39,6 @@
                     <div class="ilha" id="ilha-ciencias">
                         <div class="ilha-icone">🔬</div>
                         <span>Ilha das Descobertas</span>
-                    </div>
-                     <div class="ilha" id="ilha-historia">
-                        <div class="ilha-icone">📜</div>
-                        <span>Ilha do Tempo</span>
-                    </div>
-                     <div class="ilha" id="ilha-geografia">
-                        <div class="ilha-icone">🗺️</div>
-                        <span>Ilha do Mundo</span>
-                    </div>
-                    <div class="ilha" id="ilha-ingles">
-                        <div class="ilha-icone">🇬🇧</div>
-                        <span>The English Island</span>
                     </div>
                 </div>
             </div>
@@ -88,93 +66,22 @@
                 <button class="botao-voltar" id="voltar-para-atividades">⬅</button>
                 <h2 id="titulo-jogo"></h2>
                 
-                <div id="info-problema-container">
-                    <div id="pontos-problema"></div>
-                </div>
-
                 <div id="container-problema">
                     <div id="enunciado-problema"></div>
                     <div id="opcoes-resposta"></div>
                 </div>
 
                 <div id="acoes-problema-container">
-                    <button id="botao-ajuda" class="botao-acao-jogo">💡 Ajuda</button>
+                    <!-- Botão de Ajuda removido -->
                     <button id="botao-pular" class="botao-acao-jogo">⏭️ Pular</button>
                 </div>
             </div>
 
-            <!-- Tela 5: Configurações / Login -->
-            <div id="configuracoes-view" class="view active">
-                 <button class="botao-voltar" id="voltar-config-para-mapa">⬅</button>
-                 <h2>Configurações</h2>
-                 <div id="tela-login">
-                    <h3>Quem está jogando?</h3>
-                    <div class="perfis-container">
-                        <!-- Perfis são renderizados pelo JS -->
-                    </div>
-                 </div>
-            </div>
-
-            <!-- Tela 6: Painel do Administrador -->
-            <div id="admin-view" class="view">
-                <button class="botao-voltar" id="voltar-admin-para-config">⬅</button>
-                <h2>Painel do Administrador</h2>
-                <div class="admin-container">
-                    <div class="admin-secao">
-                        <h3>Gerenciar Brindes</h3>
-                        <div id="lista-brindes-admin"></div>
-                        <div class="admin-form">
-                            <input type="text" id="input-nome-brinde" placeholder="Nome do Brinde">
-                            <input type="number" id="input-custo-brinde" placeholder="Custo em pontos">
-                            <button id="botao-add-brinde">Adicionar Brinde</button>
-                        </div>
-                    </div>
-                    <div class="admin-secao">
-                        <h3>Gerenciar Usuários</h3>
-                        <div id="lista-usuarios-admin"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tela 7: Loja de Brindes -->
-            <div id="loja-view" class="view">
-                <button class="botao-voltar" id="voltar-loja-para-mapa">⬅</button>
-                <h2>Loja de Brindes</h2>
-                <div id="loja-container" class="menu-container">
-                    <!-- Itens da loja serão inseridos aqui pelo JS -->
-                </div>
-            </div>
-
-            <!-- Tela 8: Perfil do Jogador -->
-            <div id="perfil-view" class="view">
-                <button class="botao-voltar" id="voltar-perfil-para-mapa">⬅</button>
-                <h2>Meu Perfil</h2>
-                <div class="perfil-container">
-                    <div class="perfil-avatar-grande">
-                        <div id="avatar-display-perfil">
-                            <div class="avatar-layer-grande" id="avatar-companheiro-perfil"></div>
-                            <div class="avatar-layer-grande" id="avatar-base-perfil">🧑‍🎓</div>
-                            <div class="avatar-layer-grande" id="avatar-cabeca-perfil"></div>
-                            <div class="avatar-layer-grande" id="avatar-rosto-perfil"></div>
-                        </div>
-                    </div>
-                    <div class="perfil-dados">
-                        <div class="form-grupo">
-                            <label for="input-nome-perfil">Nome:</label>
-                            <input type="text" id="input-nome-perfil">
-                        </div>
-                        <div class="form-grupo">
-                            <label for="input-idade-perfil">Idade:</label>
-                            <input type="number" id="input-idade-perfil" min="4" max="12">
-                        </div>
-                        <button id="botao-salvar-perfil" class="botao-acao-jogo">Salvar Alterações</button>
-                    </div>
-                </div>
-            </div>
+            <!-- Telas de Perfil, Loja, Admin e Configurações foram removidas -->
             
         </main>
 
-        <!-- Estrutura do Sistema de Modal -->
+        <!-- Estrutura do Sistema de Modal (mantida para alertas da API) -->
         <div id="modal-overlay" class="modal-overlay">
             <div class="modal-container">
                 <div class="modal-header">
@@ -182,7 +89,6 @@
                 </div>
                 <div class="modal-body">
                     <p id="modal-text"></p>
-                    <input type="text" id="modal-input" style="display: none;">
                 </div>
                 <div id="modal-footer" class="modal-footer">
                     <!-- Botões serão inseridos aqui pelo JavaScript -->
