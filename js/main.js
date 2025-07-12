@@ -1,16 +1,9 @@
 /**
  * main.js
  * Ponto de entrada e orquestrador principal da aplicação "Aventura do Saber".
- * Responsável pela inicialização do Firebase, gerenciamento de estado, navegação
- * entre telas e lógica central do jogo.
- *
- * Versão 2.2 - Refatoração da inicialização do Firebase e correção de caminhos de importação.
+ * Versão 3.0 - Remoção completa do Firebase. A aplicação agora é 100% offline,
+ * com persistência de dados via LocalStorage.
  */
-
-// --- Módulos do Firebase ---
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, setLogLevel, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- Módulos de Configuração e Matérias ---
 import { BRINDES_PADRAO } from './config.js';
@@ -27,32 +20,10 @@ import { DADOS_ESTATISTICA, gerarProblemaEstatistica } from './estatistica.js';
 import { DADOS_PROBABILIDADE, gerarProblemaProbabilidade } from './probabilidade.js';
 import { DADOS_RESOLUCAO_PROBLEMAS, gerarProblemaResolucaoProblemas } from './resolucao_problemas.js';
 
-/**
- * =========================================================================
- * ATENÇÃO: CONFIGURAÇÃO DO FIREBASE
- * =========================================================================
- * Substitua os valores abaixo pelas credenciais do seu projeto no Firebase.
- * Estas credenciais são encontradas nas configurações do seu projeto no console do Firebase.
- * Exemplo: Em "Configurações do projeto" > "Geral" > "Seus apps" > "SDK do Firebase".
- */
-const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_AUTH_DOMAIN",
-    projectId: "SEU_PROJECT_ID",
-    storageBucket: "SEU_STORAGE_BUCKET",
-    messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-    appId: "SEU_APP_ID"
-};
-
-// ATENÇÃO: ID do Artefato (se aplicável, para multi-inquilino)
-// Se sua estrutura de dados não depende de um 'appId' dinâmico, pode deixar como está.
-const APP_ID = firebaseConfig.appId; // Usando o appId da configuração por padrão.
-
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- Variáveis Globais do App ---
-    let auth, db, userId;
     let estado = {
         viewAtual: 'configuracoes-view',
         materiaAtual: null,
@@ -142,9 +113,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Sons ---
-    const somAcerto = new Audio('assets/sounds/acerto.mp3'); 
-    const somErro = new Audio('assets/sounds/erro.mp3'); 
+    const somAcerto = new Audio('assets/sounds/acerto.mp3');
+    const somErro = new Audio('assets/sounds/erro.mp3');
     const somClique = new Audio('assets/sounds/clique.mp3');
+
+    // ==========================================================================
+    // --- LÓGICA DE DADOS LOCAL (LocalStorage) ---
+    // ==========================================================================
+
+    /**
+     * Salva os dados dos usuários e brindes no LocalStorage.
+     */
+    function salvarDadosLocalmente() {
+        try {
+            localStorage.setItem('aventuraSaberUsuarios', JSON.stringify(estado.usuarios));
+            localStorage.setItem('aventuraSaberBrindes', JSON.stringify(estado.brindes));
+        } catch (error) {
+            console.error("Erro ao salvar dados no LocalStorage:", error);
+            mascoteFala("Ops, não consegui salvar seu progresso!");
+        }
+    }
+
+    /**
+     * Carrega os dados de usuários e brindes do LocalStorage.
+     */
+    function carregarDadosLocais() {
+        try {
+            const usuariosSalvos = localStorage.getItem('aventuraSaberUsuarios');
+            const brindesSalvos = localStorage.getItem('aventuraSaberBrindes');
+
+            if (usuariosSalvos) {
+                estado.usuarios = JSON.parse(usuariosSalvos);
+            } else {
+                estado.usuarios = []; // Começa sem usuários se for a primeira vez
+            }
+
+            if (brindesSalvos) {
+                estado.brindes = JSON.parse(brindesSalvos);
+            } else {
+                // Se não houver brindes salvos, carrega os padrões do config.js
+                estado.brindes = BRINDES_PADRAO;
+                salvarDadosLocalmente(); // Salva os brindes padrão para futuras sessões
+            }
+        } catch (error) {
+            console.error("Erro ao carregar dados do LocalStorage:", error);
+            estado.usuarios = [];
+            estado.brindes = BRINDES_PADRAO;
+        }
+    }
+
 
     // ==========================================================================
     // --- FUNÇÕES DE LÓGICA E UTILIDADES ---
@@ -158,31 +175,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const definirCorAtiva = (cor) => { document.documentElement.style.setProperty('--cor-ativa', cor); };
 
     /**
-     * Adiciona ou remove pontos do usuário atual e atualiza no Firestore.
+     * Adiciona ou remove pontos do usuário atual e salva o estado.
      * @param {number} quantidade - A quantidade de pontos a ser adicionada (pode ser negativa).
      */
-    async function adicionarPontos(quantidade) {
+    function adicionarPontos(quantidade) {
         if (!estado.usuarioAtual) return;
         const novosPontos = Math.max(0, estado.usuarioAtual.pontos + quantidade);
         estado.usuarioAtual.pontos = novosPontos;
         atualizarPontosDisplay();
-        const userDocRef = doc(db, `artifacts/${APP_ID}/users`, estado.usuarioAtual.id);
-        await updateDoc(userDocRef, { pontos: novosPontos });
+        
+        // Atualiza o usuário na lista principal e salva
+        const index = estado.usuarios.findIndex(u => u.id === estado.usuarioAtual.id);
+        if (index !== -1) {
+            estado.usuarios[index] = estado.usuarioAtual;
+            salvarDadosLocalmente();
+        }
     }
 
     // ==========================================================================
     // --- NOVO SISTEMA DE MODAIS ---
     // ==========================================================================
 
-    /**
-     * Exibe um modal customizado.
-     * @param {object} config - Objeto de configuração do modal.
-     * @param {string} config.title - O título do modal.
-     * @param {string} config.text - O texto do corpo do modal.
-     * @param {boolean} [config.showInput=false] - Se deve mostrar um campo de input.
-     * @param {Array<object>} config.buttons - Array de botões para o rodapé.
-     * @returns {Promise<string|boolean|null>} - Retorna o valor do botão clicado ou o texto do input.
-     */
     function exibirModal(config) {
         return new Promise(resolve => {
             modalTitleEl.textContent = config.title;
@@ -198,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.onclick = () => {
                     modalOverlayEl.classList.remove('active');
                     if (config.showInput) {
-                        // Resolve com o valor do input se o botão não for de cancelamento
                         resolve(btnConfig.value === 'cancel' ? null : modalInputEl.value);
                     } else {
                         resolve(btnConfig.value);
@@ -214,11 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Exibe um modal de alerta simples com um botão "OK".
-     * @param {string} mensagem - A mensagem a ser exibida.
-     * @param {string} [titulo="Atenção"] - O título do modal.
-     */
     async function exibirAlerta(mensagem, titulo = "Atenção") {
         await exibirModal({
             title: titulo,
@@ -227,12 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Exibe um modal de confirmação com botões "Sim" e "Não".
-     * @param {string} pergunta - A pergunta de confirmação.
-     * @param {string} [titulo="Confirmar"] - O título do modal.
-     * @returns {Promise<boolean>} - Retorna true se "Sim" for clicado, false caso contrário.
-     */
     async function exibirConfirmacao(pergunta, titulo = "Confirmar") {
         const resultado = await exibirModal({
             title: titulo,
@@ -245,12 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return resultado;
     }
 
-    /**
-     * Exibe um modal que solicita uma entrada de texto do usuário.
-     * @param {string} pergunta - A pergunta para o usuário.
-     * @param {string} [titulo="Entrada de Dados"] - O título do modal.
-     * @returns {Promise<string|null>} - Retorna o texto inserido ou null se cancelado.
-     */
     async function exibirPrompt(pergunta, titulo = "Entrada de Dados") {
         const resultado = await exibirModal({
             title: titulo,
@@ -261,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { text: 'Cancelar', class: 'cancel', value: 'cancel' }
             ]
         });
-        // Retorna o valor do input apenas se o usuário clicou em "Confirmar"
         return resultado !== 'cancel' ? modalInputEl.value : null;
     }
 
@@ -298,25 +292,22 @@ document.addEventListener('DOMContentLoaded', () => {
         botaoPularEl.disabled = false;
         opcoesEl.className = 'opcoes-resposta';
 
-        // Renderização baseada no tipo de problema
         enunciadoEl.innerHTML = problema.enunciado;
         if (problema.opcoes && !problema.objetosHTML) {
              gerarBotoesDeOpcao(problema.opcoes);
         } else if (problema.objetosHTML) {
              opcoesEl.innerHTML = problema.objetosHTML;
-             // Adiciona classes de layout específicas para cada tipo de jogo interativo
              const layoutMap = {
                  'keypad_input': 'layout-keypad',
                  'drag_classificacao': 'layout-classificacao',
                  'relogio_interativo': 'layout-relogio',
                  'drag_drop_dinheiro': 'layout-dinheiro',
                  'clique_em_objetos': 'layout-objetos',
-                 'multipla_escolha': 'layout-solido' // Usado quando há objetosHTML e opções
+                 'multipla_escolha': 'layout-solido'
              };
              if (layoutMap[problema.tipo]) {
                  opcoesEl.classList.add(layoutMap[problema.tipo]);
              }
-             // Se for múltipla escolha mas com visual (ex: sólidos), gera os botões também
              if (problema.tipo === 'multipla_escolha' && problema.opcoes) {
                 gerarBotoesDeOpcao(problema.opcoes);
              }
@@ -324,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function gerarBotoesDeOpcao(opcoes) {
-        // Se já existem elementos (como um visual 3D), os botões são adicionados depois
         const containerParaBotoes = document.createElement('div');
         containerParaBotoes.className = 'botoes-container-multipla-escolha';
 
@@ -333,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const botao = document.createElement('button');
             botao.className = 'botao-resposta';
             botao.innerHTML = opcao;
-            botao.dataset.valor = String(opcao); // Garante que o valor seja string para comparação
+            botao.dataset.valor = String(opcao);
             botao.onclick = () => {
                 const acertou = String(botao.dataset.valor) === String(estado.problemaAtual.respostaCorreta);
                 resolverProblema(acertou, botao);
@@ -353,17 +343,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (acertou) {
             tocarSom(somAcerto);
-            await adicionarPontos(pontos);
+            adicionarPontos(pontos); // Não precisa mais de 'await'
             mascoteFala(`Correto! Você ganhou ${pontos} pontos!`);
             if (botaoClicado) botaoClicado.classList.add('correta');
         } else {
             tocarSom(somErro);
             const pontosPerdidos = Math.round(pontos / 2);
-            await adicionarPontos(-pontosPerdidos);
+            adicionarPontos(-pontosPerdidos); // Não precisa mais de 'await'
             mascoteFala(`Ops! A resposta correta era ${estado.problemaAtual.respostaCorreta}. Você perdeu ${pontosPerdidos} pontos.`);
             if (botaoClicado) {
                 botaoClicado.classList.add('incorreta');
-                // Encontra e destaca a resposta correta em qualquer container
                 document.querySelectorAll('.botao-resposta').forEach(b => {
                     if (String(b.dataset.valor) === String(estado.problemaAtual.respostaCorreta)) b.classList.add('correta');
                 });
@@ -386,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewAtiva.classList.add('active');
         } else {
             console.error(`View com id "${id}" não encontrada.`);
-            document.getElementById('mapa-view').classList.add('active'); // Fallback
+            document.getElementById('mapa-view').classList.add('active');
         }
         
         const logadoNoMapa = estado.usuarioAtual && id === 'mapa-view';
@@ -459,7 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const avatarRostoPerfilEl = document.getElementById('avatar-rosto-perfil');
         const avatarCompanheiroPerfilEl = document.getElementById('avatar-companheiro-perfil');
 
-        // Garante que os elementos existem antes de tentar acessá-los
         if (avatarBaseEl) avatarBaseEl.textContent = base;
         if (avatarBasePerfilEl) avatarBasePerfilEl.textContent = base;
         
@@ -539,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const idadeInput = await exibirPrompt(`Olá, ${nome.trim()}! Quantos anos você tem?`, "Idade");
-        if (idadeInput === null) return; // Cancelado
+        if (idadeInput === null) return;
         const idade = parseInt(idadeInput, 10);
         if (isNaN(idade) || idade < 4 || idade > 12) {
             mascoteFala("Por favor, insira uma idade válida entre 4 e 12 anos.");
@@ -548,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const generoInput = await exibirPrompt("Para o seu avatar, você escolhe 'menino' ou 'menina'?", "Avatar");
-        if (generoInput === null) return; // Cancelado
+        if (generoInput === null) return;
         const genero = generoInput.toLowerCase();
         if (genero !== 'menino' && genero !== 'menina') {
             mascoteFala("Por favor, escolha 'menino' ou 'menina'.");
@@ -557,6 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const novoUsuario = {
+            id: 'user_' + Date.now(), // ID único local
             nome: nome.trim(),
             idade: idade,
             avatar: genero === 'menina' ? '👩‍🎓' : '🧑‍🎓',
@@ -564,13 +553,10 @@ document.addEventListener('DOMContentLoaded', () => {
             brindesComprados: []
         };
 
-        try {
-            await addDoc(collection(db, `artifacts/${APP_ID}/users`), novoUsuario);
-            mascoteFala(`Seja bem-vindo(a), ${nome.trim()}!`);
-        } catch (error) {
-            console.error("Erro ao criar novo usuário:", error);
-            mascoteFala("Ops! Tive um problema para criar seu perfil. Tente novamente.");
-        }
+        estado.usuarios.push(novoUsuario);
+        salvarDadosLocalmente();
+        renderizarPerfis();
+        mascoteFala(`Seja bem-vindo(a), ${nome.trim()}!`);
     }
 
     function selecionarUsuario(id) {
@@ -593,7 +579,9 @@ document.addEventListener('DOMContentLoaded', () => {
             renderizarAvatar();
             botaoLojaEl.style.display = 'none';
             botaoPerfilJogadorEl.style.display = 'none';
-            mascoteFala("Olá, Administrador! O que vamos configurar hoje?");
+            renderizarBrindesAdmin();
+            renderizarUsuariosAdmin();
+            mascoteFala("Olá, Administrador! Gerenciando dados locais.");
             mostrarView('admin-view');
         } else if (senha !== null) {
             mascoteFala("Senha incorreta. Acesso negado.");
@@ -613,17 +601,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        estado.usuarioAtual.nome = novoNome;
-        estado.usuarioAtual.idade = novaIdade;
-        
-        try {
-            const userDocRef = doc(db, `artifacts/${APP_ID}/users`, estado.usuarioAtual.id);
-            await updateDoc(userDocRef, { nome: novoNome, idade: novaIdade });
+        const index = estado.usuarios.findIndex(u => u.id === estado.usuarioAtual.id);
+        if (index !== -1) {
+            estado.usuarios[index].nome = novoNome;
+            estado.usuarios[index].idade = novaIdade;
+            estado.usuarioAtual = estado.usuarios[index]; // Atualiza o usuário atual no estado
+            salvarDadosLocalmente();
             mascoteFala("Seu perfil foi salvo com sucesso!");
             setTimeout(() => mostrarView('mapa-view'), 1500);
-        } catch (error) {
-            console.error("Erro ao salvar perfil:", error);
-            mascoteFala("Ops! Não consegui salvar seu perfil. Tente mais tarde.");
+        } else {
+            mascoteFala("Ops! Não consegui encontrar seu perfil para salvar.");
         }
     }
 
@@ -662,29 +649,19 @@ document.addEventListener('DOMContentLoaded', () => {
     async function comprarBrinde(brinde) {
         const confirmou = await exibirConfirmacao(`Você quer gastar ${brinde.custo} pontos para comprar "${brinde.nome}"?`, "Confirmar Compra");
         if (confirmou) {
-            const novosPontos = estado.usuarioAtual.pontos - brinde.custo;
-            const novosBrindes = [...estado.usuarioAtual.brindesComprados, brinde.id];
+            estado.usuarioAtual.pontos -= brinde.custo;
+            estado.usuarioAtual.brindesComprados.push(brinde.id);
             
-            estado.usuarioAtual.pontos = novosPontos;
-            estado.usuarioAtual.brindesComprados = novosBrindes;
+            const index = estado.usuarios.findIndex(u => u.id === estado.usuarioAtual.id);
+            if (index !== -1) {
+                estado.usuarios[index] = estado.usuarioAtual;
+                salvarDadosLocalmente();
+            }
             
             atualizarPontosDisplay();
             renderizarLoja();
             renderizarAvatar();
-            
-            try {
-                const userDocRef = doc(db, `artifacts/${APP_ID}/users`, estado.usuarioAtual.id);
-                await updateDoc(userDocRef, {
-                    pontos: novosPontos,
-                    brindesComprados: novosBrindes
-                });
-                mascoteFala(`Parabéns! Você adquiriu ${brinde.nome}!`);
-            } catch (error) {
-                console.error("Erro ao comprar brinde:", error);
-                mascoteFala("Ops! Tive um problema para registrar sua compra.");
-                estado.usuarioAtual.pontos += brinde.custo;
-                estado.usuarioAtual.brindesComprados.pop();
-            }
+            mascoteFala(`Parabéns! Você adquiriu ${brinde.nome}!`);
         }
     }
 
@@ -701,10 +678,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>${brinde.nome}</span>
                 <div>
                     <span class="custo-brinde">⭐ ${brinde.custo}</span>
-                    <button data-id="${brinde.firestoreId}">Remover</button>
+                    <button data-id="${brinde.id}">Remover</button>
                 </div>
             `;
-            item.querySelector('button').addEventListener('click', () => removerBrinde(brinde.firestoreId));
+            item.querySelector('button').addEventListener('click', () => removerBrinde(brinde.id));
             listaBrindesAdminEl.appendChild(item);
         });
     }
@@ -734,39 +711,31 @@ document.addEventListener('DOMContentLoaded', () => {
             await exibirAlerta("Por favor, preencha o nome e um custo válido para o brinde.");
             return;
         }
-        const novoBrinde = { id: Date.now(), nome, custo, tipo: 'custom', slot: 'rosto' }; 
-        try {
-            await addDoc(collection(db, `artifacts/${APP_ID}/public/data/brindes`), novoBrinde);
-            inputNomeBrindeEl.value = '';
-            inputCustoBrindeEl.value = '';
-            mascoteFala("Novo brinde adicionado com sucesso!");
-        } catch (error) {
-            console.error("Erro ao adicionar brinde:", error);
-            mascoteFala("Não foi possível adicionar o brinde.");
-        }
+        const novoBrinde = { id: 'brinde_' + Date.now(), nome, custo, tipo: 'custom', slot: 'rosto' };
+        estado.brindes.push(novoBrinde);
+        salvarDadosLocalmente();
+        renderizarBrindesAdmin();
+        inputNomeBrindeEl.value = '';
+        inputCustoBrindeEl.value = '';
+        mascoteFala("Novo brinde adicionado com sucesso!");
     }
 
-    async function removerBrinde(firestoreId) {
+    async function removerBrinde(id) {
         if (await exibirConfirmacao("Tem certeza que deseja remover este brinde?", "Remover Brinde")) {
-            try {
-                await deleteDoc(doc(db, `artifacts/${APP_ID}/public/data/brindes`, firestoreId));
-                mascoteFala("Brinde removido.");
-            } catch (error) {
-                console.error("Erro ao remover brinde:", error);
-                mascoteFala("Não foi possível remover o brinde.");
-            }
+            estado.brindes = estado.brindes.filter(b => b.id !== id);
+            salvarDadosLocalmente();
+            renderizarBrindesAdmin();
+            mascoteFala("Brinde removido.");
         }
     }
     
     async function removerUsuario(id) {
         if (await exibirConfirmacao("Tem certeza que deseja remover este usuário? Todo o progresso dele será perdido.", "Remover Usuário")) {
-            try {
-                await deleteDoc(doc(db, `artifacts/${APP_ID}/users`, id));
-                mascoteFala("Usuário removido.");
-            } catch (error) {
-                console.error("Erro ao remover usuário:", error);
-                mascoteFala("Não foi possível remover o usuário.");
-            }
+            estado.usuarios = estado.usuarios.filter(u => u.id !== id);
+            salvarDadosLocalmente();
+            renderizarUsuariosAdmin();
+            renderizarPerfis();
+            mascoteFala("Usuário removido.");
         }
     }
 
@@ -774,95 +743,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
     // ==========================================================================
 
-    /**
-     * Inicializa a conexão com o Firebase e a autenticação.
-     */
-    async function inicializarFirebase() {
-        try {
-            if (!firebaseConfig || !firebaseConfig.projectId || firebaseConfig.apiKey === "SUA_API_KEY") {
-                throw new Error("Configuração do Firebase não fornecida ou inválida. Verifique o objeto 'firebaseConfig' no arquivo main.js.");
-            }
-
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            setLogLevel('debug');
-
-            // Autenticação anônima por padrão
-            await signInAnonymously(auth);
-
-            userId = auth.currentUser?.uid;
-            if (!userId) {
-                throw new Error("Falha na autenticação do usuário anônimo.");
-            }
-            
-            iniciarListenersFirestore();
-
-        } catch (error) {
-            console.error("ERRO CRÍTICO AO INICIALIZAR FIREBASE:", error);
-            const appContainer = document.getElementById('app-container');
-            if (appContainer) {
-                appContainer.innerHTML = `<div style="text-align: center; padding: 50px; font-family: sans-serif; color: #D8000C; background-color: #FFBABA; border: 1px solid; margin: 10px 0px; padding:15px 10px 15px 50px; background-repeat: no-repeat; background-position: 10px center;"><h1>Erro de Conexão</h1><p>Não foi possível conectar ao servidor do jogo. Verifique as configurações do Firebase no console.</p><p><i>Detalhe do erro: ${error.message}</i></p></div>`;
-            }
-        }
-    }
-
-    /**
-     * Inicia os listeners em tempo real do Firestore para usuários and brindes.
-     */
-    function iniciarListenersFirestore() {
-        // Listener para a coleção de usuários
-        const usersCollectionRef = collection(db, `artifacts/${APP_ID}/users`);
-        onSnapshot(usersCollectionRef, (snapshot) => {
-            const usuariosTemp = [];
-            snapshot.forEach(doc => {
-                usuariosTemp.push({ ...doc.data(), id: doc.id });
-            });
-            estado.usuarios = usuariosTemp;
-            if(estado.viewAtual === 'configuracoes-view' || estado.viewAtual === 'admin-view') {
-                renderizarPerfis();
-                renderizarUsuariosAdmin();
-            }
-        }, (error) => {
-            console.error("Erro no listener de usuários:", error);
-            mascoteFala("Problema ao carregar os perfis.");
-        });
-
-        // Listener para a coleção de brindes
-        const brindesCollectionRef = collection(db, `artifacts/${APP_ID}/public/data/brindes`);
-        onSnapshot(brindesCollectionRef, (snapshot) => {
-            let brindesTemp = [];
-            if (snapshot.empty) {
-                console.log("Populando brindes padrão no Firestore...");
-                BRINDES_PADRAO.forEach(async (brinde) => {
-                    await addDoc(brindesCollectionRef, brinde);
-                });
-                brindesTemp = BRINDES_PADRAO;
-            } else {
-                snapshot.forEach((doc) => {
-                    brindesTemp.push({ ...doc.data(), firestoreId: doc.id });
-                });
-            }
-            estado.brindes = brindesTemp;
-            if (estado.viewAtual === 'admin-view') renderizarBrindesAdmin();
-            if (estado.viewAtual === 'loja-view') renderizarLoja();
-            
-        }, (error) => {
-            console.error("Erro no listener de brindes:", error);
-            mascoteFala("Problema ao carregar a loja.");
-        });
-    }
-
-    /**
-     * Ponto de entrada principal da aplicação. Configura os event listeners iniciais.
-     */
-    async function inicializarApp() {
-        // Inicializa o Firebase primeiro
-        await inicializarFirebase();
-
-        // Se a inicialização falhar, o código abaixo não será executado
-        // pois a função `inicializarFirebase` irá parar a execução e mostrar um erro.
-        if (!db) return;
+    function inicializarApp() {
+        carregarDadosLocais();
         
         // Configura a navegação pelas ilhas
         document.getElementById('ilha-matematica').addEventListener('click', () => mostrarTrilhas('matematica'));
@@ -879,8 +761,9 @@ document.addEventListener('DOMContentLoaded', () => {
             estado.usuarioAtual = null; // Desloga o usuário
             atualizarPontosDisplay();
             renderizarAvatar();
+            renderizarPerfis(); // Atualiza a lista de perfis
             mostrarView('configuracoes-view');
-            mascoteFala("Vamos ver quem está pronto para a aventura!");
+            mascoteFala("Quem está jogando agora?");
         });
         botaoLojaEl.addEventListener('click', () => {
             tocarSom(somClique);
@@ -907,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const dica = estado.problemaAtual.dica || "Nenhuma dica para esta questão.";
             const custoDica = Math.round((estado.problemaAtual.pontos || 10) * 0.3);
             mascoteFala(`Dica: ${dica} (Custo: ${custoDica} pontos)`);
-            await adicionarPontos(-custoDica);
+            adicionarPontos(-custoDica);
             botaoAjudaEl.disabled = true;
         });
         botaoPularEl.addEventListener('click', () => {
@@ -934,10 +817,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         mostrarView('mapa-view');
                         mascoteFala(`Vamos continuar a aventura, ${estado.usuarioAtual.nome}!`);
                     } else {
+                        renderizarPerfis();
                         mostrarView('configuracoes-view');
                         mascoteFala("Quem está jogando agora?");
                     }
                 } else if (id === 'voltar-admin-para-config') {
+                    renderizarPerfis();
                     mostrarView('configuracoes-view');
                     mascoteFala("Quem está jogando agora?");
                 }
@@ -946,6 +831,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         mascoteFala("Olá! Bem-vindo(a) à Aventura do Saber!");
         renderizarAvatar();
+        renderizarPerfis();
         mostrarView('configuracoes-view');
     }
 
