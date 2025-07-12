@@ -1,7 +1,7 @@
 /**
  * main.js
  * Ponto de entrada e orquestrador principal da aplicação "Aventura do Saber".
- * Versão 3.2 - Simplificação da estrutura de arquivos e correção final dos caminhos de importação.
+ * Versão 4.0 - Estrutura de arquivos simplificada e funcional.
  */
 
 // --- Módulos de Configuração e Matérias ---
@@ -120,9 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE DADOS LOCAL (LocalStorage) ---
     // ==========================================================================
 
-    /**
-     * Salva os dados dos usuários e brindes no LocalStorage.
-     */
     function salvarDadosLocalmente() {
         try {
             localStorage.setItem('aventuraSaberUsuarios', JSON.stringify(estado.usuarios));
@@ -133,9 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Carrega os dados de usuários e brindes do LocalStorage.
-     */
     function carregarDadosLocais() {
         try {
             const usuariosSalvos = localStorage.getItem('aventuraSaberUsuarios');
@@ -144,15 +138,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (usuariosSalvos) {
                 estado.usuarios = JSON.parse(usuariosSalvos);
             } else {
-                estado.usuarios = []; // Começa sem usuários se for a primeira vez
+                estado.usuarios = [];
             }
 
             if (brindesSalvos) {
                 estado.brindes = JSON.parse(brindesSalvos);
             } else {
-                // Se não houver brindes salvos, carrega os padrões do config.js
                 estado.brindes = BRINDES_PADRAO;
-                salvarDadosLocalmente(); // Salva os brindes padrão para futuras sessões
+                salvarDadosLocalmente();
             }
         } catch (error) {
             console.error("Erro ao carregar dados do LocalStorage:", error);
@@ -173,17 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const definirCorAtiva = (cor) => { document.documentElement.style.setProperty('--cor-ativa', cor); };
 
-    /**
-     * Adiciona ou remove pontos do usuário atual e salva o estado.
-     * @param {number} quantidade - A quantidade de pontos a ser adicionada (pode ser negativa).
-     */
     function adicionarPontos(quantidade) {
         if (!estado.usuarioAtual) return;
         const novosPontos = Math.max(0, estado.usuarioAtual.pontos + quantidade);
         estado.usuarioAtual.pontos = novosPontos;
         atualizarPontosDisplay();
         
-        // Atualiza o usuário na lista principal e salva
         const index = estado.usuarios.findIndex(u => u.id === estado.usuarioAtual.id);
         if (index !== -1) {
             estado.usuarios[index] = estado.usuarioAtual;
@@ -192,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
-    // --- NOVO SISTEMA DE MODAIS ---
+    // --- SISTEMA DE MODAIS ---
     // ==========================================================================
 
     function exibirModal(config) {
@@ -234,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function exibirConfirmacao(pergunta, titulo = "Confirmar") {
-        const resultado = await exibirModal({
+        return await exibirModal({
             title: titulo,
             text: pergunta,
             buttons: [
@@ -242,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { text: 'Não', class: 'cancel', value: false }
             ]
         });
-        return resultado;
     }
 
     async function exibirPrompt(pergunta, titulo = "Entrada de Dados") {
@@ -276,8 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         estado.problemaAtual = gerador(estado.trilhaAtual, estado.atividadeAtual, idade);
-        
         const problema = estado.problemaAtual;
+        
         if (!problema) {
             console.error("Não foi possível gerar um problema para:", estado.materiaAtual, estado.trilhaAtual, estado.atividadeAtual);
             mascoteFala("Ops! Tive um probleminha para criar o desafio. Tente outro!");
@@ -544,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const novoUsuario = {
-            id: 'user_' + Date.now(), // ID único local
+            id: 'user_' + Date.now(),
             nome: nome.trim(),
             idade: idade,
             avatar: genero === 'menina' ? '👩‍🎓' : '🧑‍🎓',
@@ -604,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (index !== -1) {
             estado.usuarios[index].nome = novoNome;
             estado.usuarios[index].idade = novaIdade;
-            estado.usuarioAtual = estado.usuarios[index]; // Atualiza o usuário atual no estado
+            estado.usuarioAtual = estado.usuarios[index];
             salvarDadosLocalmente();
             mascoteFala("Seu perfil foi salvo com sucesso!");
             setTimeout(() => mostrarView('mapa-view'), 1500);
@@ -745,7 +732,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function inicializarApp() {
         carregarDadosLocais();
         
-        // Configura a navegação pelas ilhas
         document.getElementById('ilha-matematica').addEventListener('click', () => mostrarTrilhas('matematica'));
         document.getElementById('ilha-portugues').addEventListener('click', () => mostrarTrilhas('portugues'));
         document.getElementById('ilha-ciencias').addEventListener('click', () => mostrarTrilhas('ciencias'));
@@ -753,14 +739,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ilha-geografia').addEventListener('click', () => mostrarTrilhas('geografia'));
         document.getElementById('ilha-ingles').addEventListener('click', () => mostrarTrilhas('ingles'));
         
-        // Configura botões do HUD
         document.getElementById('botao-configuracoes').addEventListener('click', () => {
             tocarSom(somClique);
             definirCorAtiva('#888');
-            estado.usuarioAtual = null; // Desloga o usuário
+            estado.usuarioAtual = null;
             atualizarPontosDisplay();
             renderizarAvatar();
-            renderizarPerfis(); // Atualiza a lista de perfis
+            renderizarPerfis();
             mostrarView('configuracoes-view');
             mascoteFala("Quem está jogando agora?");
         });
@@ -781,7 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mascoteFala("Aqui você pode ver e editar seu perfil!");
         });
         
-        // Configura botões de ação
         botaoAddBrindeEl.addEventListener('click', adicionarBrinde);
         botaoSalvarPerfilEl.addEventListener('click', salvarPerfil);
         botaoAjudaEl.addEventListener('click', async () => {
@@ -798,7 +782,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gerarProblema();
         });
 
-        // Delegação de eventos para os botões de "voltar"
         document.body.addEventListener('click', (e) => {
             if (e.target.classList.contains('botao-voltar')) {
                 tocarSom(somClique);
@@ -834,6 +817,5 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarView('configuracoes-view');
     }
 
-    // --- Ponto de Entrada ---
     inicializarApp();
 });
