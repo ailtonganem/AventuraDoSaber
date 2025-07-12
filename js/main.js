@@ -1,24 +1,23 @@
 /**
  * main.js
  * Ponto de entrada e orquestrador principal da aplicação "Aventura do Saber".
- * Versão 3.0 - Remoção completa do Firebase. A aplicação agora é 100% offline,
- * com persistência de dados via LocalStorage.
+ * Versão 3.1 - Correção dos caminhos de importação dos módulos.
  */
 
 // --- Módulos de Configuração e Matérias ---
-import { BRINDES_PADRAO } from './config.js';
-import { DADOS_CIENCIAS, gerarProblemaCiencias } from './ciencias.js';
-import { DADOS_GEOGRAFIA, gerarProblemaGeografia } from './geografia.js';
-import { DADOS_HISTORIA, gerarProblemaHistoria } from './historia.js';
-import { DADOS_INGLES, gerarProblemaIngles } from './ingles.js';
-import { DADOS_ORTOGRAFIA, gerarProblemaOrtografia } from './ortografia.js';
-import { DADOS_OPERACOES, gerarProblemaOperacoes } from './operacoes.js';
-import { DADOS_FRACOES, gerarProblemaFracoes } from './fracoes.js';
-import { DADOS_GEOMETRIA, gerarProblemaGeometria } from './geometria.js';
-import { DADOS_MEDIDAS, gerarProblemaMedidas } from './medidas.js';
-import { DADOS_ESTATISTICA, gerarProblemaEstatistica } from './estatistica.js';
-import { DADOS_PROBABILIDADE, gerarProblemaProbabilidade } from './probabilidade.js';
-import { DADOS_RESOLUCAO_PROBLEMAS, gerarProblemaResolucaoProblemas } from './resolucao_problemas.js';
+import { BRINDES_PADRAO } from '../config.js';
+import { DADOS_CIENCIAS, gerarProblemaCiencias } from '../ciencias.js';
+import { DADOS_GEOGRAFIA, gerarProblemaGeografia } from '../geografia.js';
+import { DADOS_HISTORIA, gerarProblemaHistoria } from '../historia.js';
+import { DADOS_INGLES, gerarProblemaIngles } from '../ingles.js';
+import { DADOS_ORTOGRAFIA, gerarProblemaOrtografia } from '../ortografia.js';
+import { DADOS_OPERACOES, gerarProblemaOperacoes } from '../operacoes.js';
+import { DADOS_FRACOES, gerarProblemaFracoes } from '../fracoes.js';
+import { DADOS_GEOMETRIA, gerarProblemaGeometria } from '../geometria.js';
+import { DADOS_MEDIDAS, gerarProblemaMedidas } from '../medidas.js';
+import { DADOS_ESTATISTICA, gerarProblemaEstatistica } from '../estatistica.js';
+import { DADOS_PROBABILIDADE, gerarProblemaProbabilidade } from '../probabilidade.js';
+import { DADOS_RESOLUCAO_PROBLEMAS, gerarProblemaResolucaoProblemas } from '../resolucao_problemas.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -343,13 +342,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (acertou) {
             tocarSom(somAcerto);
-            adicionarPontos(pontos); // Não precisa mais de 'await'
+            adicionarPontos(pontos);
             mascoteFala(`Correto! Você ganhou ${pontos} pontos!`);
             if (botaoClicado) botaoClicado.classList.add('correta');
         } else {
             tocarSom(somErro);
             const pontosPerdidos = Math.round(pontos / 2);
-            adicionarPontos(-pontosPerdidos); // Não precisa mais de 'await'
+            adicionarPontos(-pontosPerdidos);
             mascoteFala(`Ops! A resposta correta era ${estado.problemaAtual.respostaCorreta}. Você perdeu ${pontosPerdidos} pontos.`);
             if (botaoClicado) {
                 botaoClicado.classList.add('incorreta');
