@@ -11,7 +11,7 @@
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
 // ATENÇÃO: Substitua pela sua API Key do Google AI Studio.
-const API_KEY = "SUA_API_KEY_AQUI"; 
+const API_KEY = "AIzaSyD8jX6FlIKta7T-0pGeNAplTUmO4bQ4uu0"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
