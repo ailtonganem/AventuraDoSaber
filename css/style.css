@@ -1,0 +1,29 @@
+/*
+ * Arquivo: css/style.css
+ * Projeto: Aventura do Saber
+ * Descrição: Folha de estilos principal da aplicação.
+ * Versão: 1.0
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+/* Reset básico e definições globais */
+body {
+    font-family: 'Poppins', sans-serif;
+    color: #333; /* Cor padrão para textos fora do canvas do jogo */
+    background-color: #f0f0f0; /* Cor de fundo da página, caso algo fique fora do container */
+}
+
+/*
+ * O container do jogo (#game-container) já foi estilizado
+ * diretamente no index.html para garantir o carregamento
+ * inicial correto. Podemos mover os estilos para cá ou
+ * adicionar mais estilos para elementos HTML que
+ * porventura fiquem fora do canvas do Phaser.
+ */
+
+canvas {
+    /* O Phaser irá criar um elemento <canvas> dentro do #game-container. */
+    /* Este seletor pode ser útil para aplicar estilos diretamente a ele. */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Adiciona uma sombra sutil ao redor do jogo */
+}
