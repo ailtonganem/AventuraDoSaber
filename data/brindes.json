@@ -1,0 +1,37 @@
+[
+    {
+        "id": "item_001",
+        "nome": "Boné Vermelho",
+        "preco": 50,
+        "imagem": "assets/images/items/bone_vermelho.png",
+        "tipo": "cabeca"
+    },
+    {
+        "id": "item_002",
+        "nome": "Óculos de Sol",
+        "preco": 75,
+        "imagem": "assets/images/items/oculos_sol.png",
+        "tipo": "acessorio_rosto"
+    },
+    {
+        "id": "item_003",
+        "nome": "Capa de Herói",
+        "preco": 200,
+        "imagem": "assets/images/items/capa_heroi.png",
+        "tipo": "corpo"
+    },
+    {
+        "id": "item_004",
+        "nome": "Tênis com Luzes",
+        "preco": 150,
+        "imagem": "assets/images/items/tenis_luzes.png",
+        "tipo": "pes"
+    },
+    {
+        "id": "item_005",
+        "nome": "Jaleco de Cientista",
+        "preco": 120,
+        "imagem": "assets/images/items/jaleco_cientista.png",
+        "tipo": "corpo"
+    }
+]
