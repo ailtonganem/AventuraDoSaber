@@ -1,0 +1,58 @@
+[
+    {
+        "id": "POR001",
+        "disciplina": "Língua Portuguesa",
+        "nivel": 1,
+        "pontos": 10,
+        "pergunta": "Qual é o sinônimo da palavra 'alegre'?",
+        "alternativas": [
+            "Triste",
+            "Bonito",
+            "Contente",
+            "Inteligente"
+        ],
+        "respostaCorreta": 2
+    },
+    {
+        "id": "POR002",
+        "disciplina": "Língua Portuguesa",
+        "nivel": 1,
+        "pontos": 10,
+        "pergunta": "Qual palavra abaixo é um substantivo próprio?",
+        "alternativas": [
+            "Menina",
+            "País",
+            "Cachorro",
+            "Brasil"
+        ],
+        "respostaCorreta": 3
+    },
+    {
+        "id": "POR003",
+        "disciplina": "Língua Portuguesa",
+        "nivel": 2,
+        "pontos": 20,
+        "pergunta": "Na frase 'O gato rápido pulou o muro', qual palavra é o adjetivo?",
+        "alternativas": [
+            "Gato",
+            "Rápido",
+            "Pulou",
+            "Muro"
+        ],
+        "respostaCorreta": 1
+    },
+    {
+        "id": "POR004",
+        "disciplina": "Língua Portuguesa",
+        "nivel": 3,
+        "pontos": 30,
+        "pergunta": "Qual é o antônimo da palavra 'economia'?",
+        "alternativas": [
+            "Riqueza",
+            "Pobreza",
+            "Desperdício",
+            "Ganho"
+        ],
+        "respostaCorreta": 2
+    }
+]
