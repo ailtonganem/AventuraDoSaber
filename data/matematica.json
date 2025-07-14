@@ -1,0 +1,58 @@
+[
+    {
+        "id": "MAT001",
+        "disciplina": "Matemática",
+        "nivel": 1,
+        "pontos": 10,
+        "pergunta": "Quanto é 8 x 7?",
+        "alternativas": [
+            "54",
+            "56",
+            "63",
+            "64"
+        ],
+        "respostaCorreta": 1
+    },
+    {
+        "id": "MAT002",
+        "disciplina": "Matemática",
+        "nivel": 1,
+        "pontos": 10,
+        "pergunta": "Mariana comprou 3 dúzias de ovos. Quantos ovos ela comprou no total?",
+        "alternativas": [
+            "30",
+            "12",
+            "36",
+            "24"
+        ],
+        "respostaCorreta": 2
+    },
+    {
+        "id": "MAT003",
+        "disciplina": "Matemática",
+        "nivel": 2,
+        "pontos": 20,
+        "pergunta": "Qual o resultado da operação 150 + 25 - 50?",
+        "alternativas": [
+            "125",
+            "175",
+            "100",
+            "225"
+        ],
+        "respostaCorreta": 0
+    },
+    {
+        "id": "MAT004",
+        "disciplina": "Matemática",
+        "nivel": 3,
+        "pontos": 30,
+        "pergunta": "Um cinema tem 15 fileiras com 10 cadeiras cada. Se 50 cadeiras já estão ocupadas, quantas estão vazias?",
+        "alternativas": [
+            "150",
+            "50",
+            "100",
+            "200"
+        ],
+        "respostaCorreta": 2
+    }
+]
