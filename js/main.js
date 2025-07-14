@@ -2,7 +2,7 @@
  * Arquivo: js/main.js
  * Projeto: Aventura do Saber
  * Descrição: Lógica principal do jogo, incluindo a cena de gameplay.
- * Versão: 1.2
+ * Versão: 1.3
  */
 
 // A classe GameScene encapsula a lógica e os dados da nossa tela de jogo.
@@ -47,24 +47,28 @@ class GameScene extends Phaser.Scene {
 
         // Pega a pergunta atual do nosso array de questões
         const questionData = this.questoes[this.currentQuestionIndex];
+        
+        // Pega as dimensões da câmera para centralizar os elementos dinamicamente
+        const centerX = this.cameras.main.centerX;
+        const startY = this.cameras.main.height * 0.20; // Posição Y inicial (20% do topo)
 
         // Exibe o texto da pergunta
-        const questionText = this.add.text(400, 100, questionData.pergunta, {
+        const questionText = this.add.text(centerX, startY, questionData.pergunta, {
             fontSize: '28px',
             fill: '#FFFFFF',
             fontFamily: '"Poppins"',
             align: 'center',
-            wordWrap: { width: 750 }
+            wordWrap: { width: this.cameras.main.width - 100 } // Largura baseada no tamanho da tela
         }).setOrigin(0.5);
 
         this.questionGroup.add(questionText);
 
         // Posição inicial Y para a primeira alternativa
-        let positionY = 250;
+        let positionY = startY + 150;
 
         // Cria um objeto de texto para cada alternativa
         questionData.alternativas.forEach((alternativa, index) => {
-            const alternativaText = this.add.text(400, positionY, alternativa, {
+            const alternativaText = this.add.text(centerX, positionY, alternativa, {
                 fontSize: '24px',
                 fill: '#DDDDDD', // Cor padrão para as alternativas
                 fontFamily: '"Poppins"',
@@ -105,17 +109,19 @@ class GameScene extends Phaser.Scene {
             console.log("RESPOSTA INCORRETA!");
             // Futuramente aqui entrará a lógica de perder pontos.
         }
-
-        // Por enquanto, apenas logamos no console. O próximo passo será
-        // dar feedback visual e passar para a próxima pergunta.
     }
 }
 
 // Configuração principal do jogo Phaser
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    // Adiciona o gerenciador de escala para responsividade
+    scale: {
+        mode: Phaser.Scale.FIT, // Ajusta o jogo à tela mantendo a proporção
+        autoCenter: Phaser.Scale.CENTER_BOTH, // Centraliza o jogo na tela
+        width: 1280, // Largura base do jogo para referência de proporção
+        height: 720  // Altura base do jogo para referência de proporção
+    },
     parent: 'game-container',
     backgroundColor: '#000033',
     // Agora o jogo usa a nossa classe de cena
