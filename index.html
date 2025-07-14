@@ -3,102 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>Aventura do Saber</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Estilos básicos para garantir que o container do jogo ocupe a tela */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Evita barras de rolagem */
+            background-color: #333; /* Fundo escuro para destacar o jogo */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #game-container {
+            border: 3px solid #fff;
+        }
+    </style>
 </head>
 <body>
-
-    <div id="app-container">
-        <header id="hud">
-            <div class="mascote-container">
-                <div id="avatar-display">
-                    <div class="avatar-layer" id="avatar-base">🧑‍🎓</div>
-                </div>
-                <div id="balao-fala" class="balao">Vamos começar a explorar!</div>
-            </div>
-            <!-- Seção de botões do HUD removida -->
-        </header>
-
-        <main>
-            <!-- Tela 1: O Mapa das Ilhas (Tela Inicial) -->
-            <div id="mapa-view" class="view active">
-                <h1>Mapa da Aventura</h1>
-                <div class="mapa-grid">
-                    <div class="ilha" id="ilha-matematica">
-                        <div class="ilha-icone">🔢</div>
-                        <span>Ilha dos Números</span>
-                    </div>
-                    <div class="ilha" id="ilha-portugues">
-                        <div class="ilha-icone">🔤</div>
-                        <span>Ilha das Palavras</span>
-                    </div>
-                    <div class="ilha" id="ilha-ciencias">
-                        <div class="ilha-icone">🔬</div>
-                        <span>Ilha das Descobertas</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tela 2: Menu de Trilhas da Matéria -->
-            <div id="trilhas-view" class="view">
-                <button class="botao-voltar" id="voltar-para-mapa">⬅</button>
-                <h2 id="trilhas-titulo"></h2>
-                <div id="trilhas-container" class="menu-container">
-                    <!-- Botões das trilhas serão inseridos aqui pelo JavaScript -->
-                </div>
-            </div>
-
-            <!-- Tela 3: Menu de Atividades da Trilha -->
-            <div id="atividades-view" class="view">
-                <button class="botao-voltar" id="voltar-para-trilhas">⬅</button>
-                <h2 id="atividades-titulo"></h2>
-                <div id="atividades-container" class="menu-container">
-                    <!-- Botões das atividades serão inseridos aqui pelo JavaScript -->
-                </div>
-            </div>
-
-            <!-- Tela 4: O Jogo -->
-            <div id="jogo-view" class="view">
-                <button class="botao-voltar" id="voltar-para-atividades">⬅</button>
-                <h2 id="titulo-jogo"></h2>
-                
-                <div id="container-problema">
-                    <div id="enunciado-problema"></div>
-                    <div id="opcoes-resposta"></div>
-                </div>
-
-                <div id="acoes-problema-container">
-                    <!-- Botão de Ajuda removido -->
-                    <button id="botao-pular" class="botao-acao-jogo">⏭️ Pular</button>
-                </div>
-            </div>
-
-            <!-- Telas de Perfil, Loja, Admin e Configurações foram removidas -->
-            
-        </main>
-
-        <!-- Estrutura do Sistema de Modal (mantida para alertas da API) -->
-        <div id="modal-overlay" class="modal-overlay">
-            <div class="modal-container">
-                <div class="modal-header">
-                    <h3 id="modal-title"></h3>
-                </div>
-                <div class="modal-body">
-                    <p id="modal-text"></p>
-                </div>
-                <div id="modal-footer" class="modal-footer">
-                    <!-- Botões serão inseridos aqui pelo JavaScript -->
-                </div>
-            </div>
-        </div>
-    </div>
     
-    <!-- Script principal da aplicação como módulo -->
-    <script src="js/main.js" type="module"></script>
+    <div id="game-container"></div>
+
+    <!-- Bibliotecas de Terceiros -->
+    <script src="js/phaser.min.js"></script>
+    <script src="js/howler.min.js"></script>
+
+    <!-- Nosso Código Principal -->
+    <script src="js/main.js"></script>
 
 </body>
 </html>
