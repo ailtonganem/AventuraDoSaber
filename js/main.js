@@ -1,8 +1,8 @@
 /*
  * Arquivo: js/main.js
  * Projeto: Aventura do Saber
- * Descrição: Lógica principal do jogo, incluindo cenas de menu, jogo e loja.
- * Versão: 1.8
+ * Descrição: Lógica principal do jogo, incluindo cenas de menu, jogo, loja e personalização.
+ * Versão: 1.9
  */
 
 // Cena do Menu Principal
@@ -24,14 +24,16 @@ class MainMenuScene extends Phaser.Scene {
         this.add.image(centerX, centerY - 50, userData.avatar).setScale(0.5);
         this.add.text(centerX, centerY + 50, `Pontuação atual: ${userData.score}`, { fontSize: '24px', fill: '#FFFF00', fontFamily: '"Poppins"' }).setOrigin(0.5);
 
-        const continueButton = this.add.text(centerX, centerY + 150, 'Continuar Jogo', { fontSize: '28px', fill: '#FFFFFF', backgroundColor: '#28a745', padding: {x: 20, y: 10}, fontFamily: '"Poppins"' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        const continueButton = this.add.text(centerX, centerY + 130, 'Continuar Jogo', { fontSize: '28px', fill: '#FFFFFF', backgroundColor: '#28a745', padding: {x: 20, y: 10}, fontFamily: '"Poppins"' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         continueButton.on('pointerdown', () => this.scene.start('GameScene', userData));
 
-        // BOTÃO DA LOJA
-        const shopButton = this.add.text(centerX, centerY + 220, 'Loja de Brindes', { fontSize: '22px', fill: '#FFFFFF', backgroundColor: '#007bff', padding: {x: 15, y: 8}, fontFamily: '"Poppins"' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        const customizeButton = this.add.text(centerX, centerY + 200, 'Personalizar Avatar', { fontSize: '22px', fill: '#FFFFFF', backgroundColor: '#6f42c1', padding: {x: 15, y: 8}, fontFamily: '"Poppins"' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        customizeButton.on('pointerdown', () => this.scene.start('CustomizationScene'));
+
+        const shopButton = this.add.text(centerX, centerY + 270, 'Loja de Brindes', { fontSize: '22px', fill: '#FFFFFF', backgroundColor: '#007bff', padding: {x: 15, y: 8}, fontFamily: '"Poppins"' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         shopButton.on('pointerdown', () => this.scene.start('ShopScene'));
 
-        const resetButton = this.add.text(centerX, centerY + 290, 'Começar Novo Jogo', { fontSize: '18px', fill: '#DDDDDD', backgroundColor: '#dc3545', padding: {x: 10, y: 5}, fontFamily: '"Poppins"' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        const resetButton = this.add.text(centerX, centerY + 340, 'Começar Novo Jogo', { fontSize: '18px', fill: '#DDDDDD', backgroundColor: '#dc3545', padding: {x: 10, y: 5}, fontFamily: '"Poppins"' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         resetButton.on('pointerdown', () => { localStorage.removeItem('aventuraSaberUser'); this.scene.restart(); });
     }
     showRegistrationScreen() {
@@ -53,7 +55,7 @@ class MainMenuScene extends Phaser.Scene {
                 const playerNameInput = form.getChildByName('playerName');
                 const playerName = playerNameInput.value.trim();
                 if (playerName && this.selectedAvatarKey) {
-                    const userData = { name: playerName, score: 0, avatar: this.selectedAvatarKey, inventory: [] };
+                    const userData = { name: playerName, score: 0, avatar: this.selectedAvatarKey, inventory: [], equippedItems: {} };
                     localStorage.setItem('aventuraSaberUser', JSON.stringify(userData));
                     this.scene.start('GameScene', userData);
                 } else if (!playerName) { feedbackText.setText('Por favor, digite seu nome!'); }
@@ -68,12 +70,38 @@ class GameScene extends Phaser.Scene {
     constructor() { super({ key: 'GameScene' }); }
     init(data) { this.userData = data; }
     preload() {
+        this.load.json('brindes', 'data/brindes.json');
         this.load.json('questoes_mat', 'data/matematica.json');
         this.load.image(this.userData.avatar, `assets/images/avatars/${this.userData.avatar}.png`);
+        
+        // Carrega as imagens dos itens equipados
+        const brindes = this.cache.json.get('brindes');
+        if (brindes) { // Garante que brindes.json está no cache
+            Object.values(this.userData.equippedItems).forEach(itemId => {
+                const itemData = brindes.find(b => b.id === itemId);
+                if(itemData) this.load.image(itemData.id, itemData.imagem);
+            });
+        }
     }
     create() {
-        this.add.image(50, 45, this.userData.avatar).setScale(0.3);
-        this.add.text(90, 35, `Jogador: ${this.userData.name}`, { fontSize: '24px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(0, 0.5);
+        // Container para o avatar e seus itens
+        const avatarContainer = this.add.container(60, 60);
+        const baseAvatar = this.add.image(0, 0, this.userData.avatar).setScale(0.35);
+        avatarContainer.add(baseAvatar);
+
+        // Exibe os itens equipados sobre o avatar
+        const brindes = this.cache.json.get('brindes');
+        if (brindes) {
+            Object.values(this.userData.equippedItems).forEach(itemId => {
+                const itemData = brindes.find(b => b.id === itemId);
+                if(itemData) {
+                    const itemSprite = this.add.image(0, 0, itemData.id).setScale(0.35);
+                    avatarContainer.add(itemSprite);
+                }
+            });
+        }
+
+        this.add.text(120, 35, `Jogador: ${this.userData.name}`, { fontSize: '24px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(0, 0.5);
         this.scoreText = this.add.text(this.cameras.main.width - 20, 20, `Pontos: ${this.userData.score}`, { fontSize: '24px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(1, 0);
         this.questoes = this.cache.json.get('questoes_mat');
         this.currentQuestionIndex = 0;
@@ -81,52 +109,11 @@ class GameScene extends Phaser.Scene {
         this.alternativeTexts = [];
         this.displayCurrentQuestion();
     }
-    displayCurrentQuestion() {
-        this.questionGroup.clear(true, true);
-        this.alternativeTexts = [];
-        const questionData = this.questoes[this.currentQuestionIndex];
-        const centerX = this.cameras.main.centerX;
-        const startY = this.cameras.main.height * 0.25;
-        const questionText = this.add.text(centerX, startY, questionData.pergunta, { fontSize: '28px', fill: '#FFFFFF', fontFamily: '"Poppins"', align: 'center', wordWrap: { width: this.cameras.main.width - 100 } }).setOrigin(0.5);
-        this.questionGroup.add(questionText);
-        let positionY = startY + 150;
-        questionData.alternativas.forEach((alternativa, index) => {
-            const alternativaText = this.add.text(centerX, positionY, alternativa, { fontSize: '24px', fill: '#DDDDDD', fontFamily: '"Poppins"', backgroundColor: '#1a1a52', padding: { x: 20, y: 10 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-            alternativaText.on('pointerdown', () => this.selectAnswer(index));
-            alternativaText.on('pointerover', () => alternativaText.setFill('#FFFF00'));
-            alternativaText.on('pointerout', () => alternativaText.setFill('#DDDDDD'));
-            this.questionGroup.add(alternativaText);
-            this.alternativeTexts.push(alternativaText);
-            positionY += 70;
-        });
-    }
-    selectAnswer(selectedIndex) {
-        this.alternativeTexts.forEach(text => text.disableInteractive());
-        const questionData = this.questoes[this.currentQuestionIndex];
-        const selectedText = this.alternativeTexts[selectedIndex];
-        const correctText = this.alternativeTexts[questionData.respostaCorreta];
-        if (selectedIndex === questionData.respostaCorreta) {
-            this.userData.score += questionData.pontos;
-            selectedText.setBackgroundColor('#008000');
-        } else {
-            const pointsToLose = Math.round(questionData.pontos * 0.30);
-            this.userData.score = Math.max(0, this.userData.score - pointsToLose);
-            selectedText.setBackgroundColor('#FF0000');
-            correctText.setBackgroundColor('#008000');
-        }
-        this.scoreText.setText(`Pontos: ${this.userData.score}`);
-        this.time.delayedCall(2000, this.goToNextQuestion, [], this);
-    }
-    goToNextQuestion() {
-        this.currentQuestionIndex++;
-        if (this.currentQuestionIndex < this.questoes.length) this.displayCurrentQuestion();
-        else this.endQuiz();
-    }
-    endQuiz() {
-        localStorage.setItem('aventuraSaberUser', JSON.stringify(this.userData));
-        console.log("Pontuação final salva:", this.userData);
-        this.scene.start('MainMenuScene'); // Volta para o menu ao final do quiz
-    }
+    // ... (O resto da GameScene permanece o mesmo: displayCurrentQuestion, selectAnswer, goToNextQuestion) ...
+    displayCurrentQuestion() { this.questionGroup.clear(true, true); this.alternativeTexts = []; const questionData = this.questoes[this.currentQuestionIndex]; const centerX = this.cameras.main.centerX; const startY = this.cameras.main.height * 0.25; const questionText = this.add.text(centerX, startY, questionData.pergunta, { fontSize: '28px', fill: '#FFFFFF', fontFamily: '"Poppins"', align: 'center', wordWrap: { width: this.cameras.main.width - 100 } }).setOrigin(0.5); this.questionGroup.add(questionText); let positionY = startY + 150; questionData.alternativas.forEach((alternativa, index) => { const alternativaText = this.add.text(centerX, positionY, alternativa, { fontSize: '24px', fill: '#DDDDDD', fontFamily: '"Poppins"', backgroundColor: '#1a1a52', padding: { x: 20, y: 10 } }).setOrigin(0.5).setInteractive({ useHandCursor: true }); alternativaText.on('pointerdown', () => this.selectAnswer(index)); alternativaText.on('pointerover', () => alternativaText.setFill('#FFFF00')); alternativaText.on('pointerout', () => alternativaText.setFill('#DDDDDD')); this.questionGroup.add(alternativaText); this.alternativeTexts.push(alternativaText); positionY += 70; }); }
+    selectAnswer(selectedIndex) { this.alternativeTexts.forEach(text => text.disableInteractive()); const questionData = this.questoes[this.currentQuestionIndex]; const selectedText = this.alternativeTexts[selectedIndex]; const correctText = this.alternativeTexts[questionData.respostaCorreta]; if (selectedIndex === questionData.respostaCorreta) { this.userData.score += questionData.pontos; selectedText.setBackgroundColor('#008000'); } else { const pointsToLose = Math.round(questionData.pontos * 0.30); this.userData.score = Math.max(0, this.userData.score - pointsToLose); selectedText.setBackgroundColor('#FF0000'); correctText.setBackgroundColor('#008000'); } this.scoreText.setText(`Pontos: ${this.userData.score}`); this.time.delayedCall(2000, this.goToNextQuestion, [], this); }
+    goToNextQuestion() { this.currentQuestionIndex++; if (this.currentQuestionIndex < this.questoes.length) this.displayCurrentQuestion(); else this.endQuiz(); }
+    endQuiz() { localStorage.setItem('aventuraSaberUser', JSON.stringify(this.userData)); console.log("Pontuação final salva:", this.userData); this.scene.start('MainMenuScene'); }
 }
 
 // Cena da Loja de Brindes
@@ -135,60 +122,107 @@ class ShopScene extends Phaser.Scene {
     init() { this.userData = JSON.parse(localStorage.getItem('aventuraSaberUser')); }
     preload() {
         this.load.json('brindes', 'data/brindes.json');
-        // Carregamento manual das imagens dos itens (para simplificação)
-        this.load.image('item_001', 'assets/images/items/bone_vermelho.png');
-        this.load.image('item_002', 'assets/images/items/oculos_sol.png');
-        this.load.image('item_003', 'assets/images/items/capa_heroi.png');
-        this.load.image('item_004', 'assets/images/items/tenis_luzes.png');
-        this.load.image('item_005', 'assets/images/items/jaleco_cientista.png');
+        const brindesData = this.cache.json.get('brindes'); // Tenta pegar do cache primeiro
+        // Esta abordagem de carregamento pode ser melhorada
+        this.load.image('item_001', 'assets/images/items/bone_vermelho.png'); this.load.image('item_002', 'assets/images/items/oculos_sol.png'); this.load.image('item_003', 'assets/images/items/capa_heroi.png'); this.load.image('item_004', 'assets/images/items/tenis_luzes.png'); this.load.image('item_005', 'assets/images/items/jaleco_cientista.png');
     }
     create() {
-        const centerX = this.cameras.main.centerX;
-        this.add.text(centerX, 50, 'Loja de Brindes', { fontSize: '48px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(0.5);
+        const centerX = this.cameras.main.centerX; this.add.text(centerX, 50, 'Loja de Brindes', { fontSize: '48px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(0.5);
         this.scoreText = this.add.text(this.cameras.main.width - 20, 20, `Seus Pontos: ${this.userData.score}`, { fontSize: '24px', fill: '#FFFF00', fontFamily: '"Poppins"' }).setOrigin(1, 0);
         const backButton = this.add.text(20, 20, '< Voltar ao Menu', { fontSize: '22px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(0,0).setInteractive({ useHandCursor: true });
         backButton.on('pointerdown', () => this.scene.start('MainMenuScene'));
-
         const brindes = this.cache.json.get('brindes');
-        let startX = 200;
-        let startY = 200;
-        const spacingX = 220;
-        const spacingY = 250;
-        const itemsPerRow = 4;
-
+        let startX = 200, startY = 200, spacingX = 220, spacingY = 250, itemsPerRow = 4;
         brindes.forEach((item, index) => {
-            const x = startX + (index % itemsPerRow) * spacingX;
-            const y = startY + Math.floor(index / itemsPerRow) * spacingY;
-            
+            const x = startX + (index % itemsPerRow) * spacingX; const y = startY + Math.floor(index / itemsPerRow) * spacingY;
             this.add.rectangle(x, y, 180, 200, 0x000033, 0.5).setStrokeStyle(2, 0x1a1a52);
             this.add.image(x, y - 30, item.id).setScale(0.7);
             this.add.text(x, y + 50, item.nome, { fontSize: '18px', fill: '#FFFFFF' }).setOrigin(0.5);
             this.add.text(x, y + 75, `Preço: ${item.preco} pts`, { fontSize: '16px', fill: '#FFFF00' }).setOrigin(0.5);
+            const ownsItem = this.userData.inventory.includes(item.id); const canAfford = this.userData.score >= item.preco;
+            if (ownsItem) { this.add.text(x, y + 115, 'Comprado', { fontSize: '18px', fill: '#AAAAAA', backgroundColor: '#555555', padding: {x:10, y:5} }).setOrigin(0.5); }
+            else if (canAfford) { const button = this.add.text(x, y + 115, 'Comprar', { fontSize: '18px', fill: '#FFFFFF', backgroundColor: '#28a745', padding: {x:10, y:5} }).setOrigin(0.5).setInteractive({ useHandCursor: true }); button.on('pointerdown', () => this.buyItem(item, button)); }
+            else { this.add.text(x, y + 115, 'Comprar', { fontSize: '18px', fill: '#AAAAAA', backgroundColor: '#888888', padding: {x:10, y:5} }).setOrigin(0.5); }
+        });
+    }
+    buyItem(item, button) { this.userData.score -= item.preco; this.userData.inventory.push(item.id); localStorage.setItem('aventuraSaberUser', JSON.stringify(this.userData)); this.scoreText.setText(`Seus Pontos: ${this.userData.score}`); button.setText('Comprado').setBackgroundColor('#555555').disableInteractive(); }
+}
 
-            const ownsItem = this.userData.inventory.includes(item.id);
-            const canAfford = this.userData.score >= item.preco;
-            let button;
+// Cena de Personalização do Avatar
+class CustomizationScene extends Phaser.Scene {
+    constructor() { super({ key: 'CustomizationScene' }); }
+    init() { this.userData = JSON.parse(localStorage.getItem('aventuraSaberUser')); }
+    preload() {
+        this.load.json('brindes', 'data/brindes.json');
+        this.load.image(this.userData.avatar, `assets/images/avatars/${this.userData.avatar}.png`);
+        const brindesData = this.cache.json.get('brindes'); // Tenta pegar do cache
+        // Carrega todas as imagens de itens (próprios e não próprios) para simplificar
+        this.load.image('item_001', 'assets/images/items/bone_vermelho.png'); this.load.image('item_002', 'assets/images/items/oculos_sol.png'); this.load.image('item_003', 'assets/images/items/capa_heroi.png'); this.load.image('item_004', 'assets/images/items/tenis_luzes.png'); this.load.image('item_005', 'assets/images/items/jaleco_cientista.png');
+    }
+    create() {
+        this.brindes = this.cache.json.get('brindes');
+        const centerX = this.cameras.main.centerX;
+        this.add.text(centerX, 50, 'Personalize seu Avatar', { fontSize: '48px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(0.5);
+        const backButton = this.add.text(20, 20, '< Voltar ao Menu', { fontSize: '22px', fill: '#FFFFFF', fontFamily: '"Poppins"' }).setOrigin(0,0).setInteractive({ useHandCursor: true });
+        backButton.on('pointerdown', () => this.scene.start('MainMenuScene'));
 
-            if (ownsItem) {
-                button = this.add.text(x, y + 115, 'Comprado', { fontSize: '18px', fill: '#AAAAAA', backgroundColor: '#555555', padding: {x:10, y:5} }).setOrigin(0.5);
-            } else if (canAfford) {
-                button = this.add.text(x, y + 115, 'Comprar', { fontSize: '18px', fill: '#FFFFFF', backgroundColor: '#28a745', padding: {x:10, y:5} }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-                button.on('pointerdown', () => this.buyItem(item, button));
-            } else {
-                button = this.add.text(x, y + 115, 'Comprar', { fontSize: '18px', fill: '#AAAAAA', backgroundColor: '#888888', padding: {x:10, y:5} }).setOrigin(0.5);
+        // Container para o avatar e seus itens
+        this.avatarContainer = this.add.container(350, 360);
+        this.avatarContainer.add(this.add.image(0, 0, this.userData.avatar));
+
+        // Container para o inventário
+        this.inventoryContainer = this.add.container(850, 150);
+        this.add.text(850, 100, 'Seu Inventário', { fontSize: '28px', fill: '#FFFFFF' }).setOrigin(0.5);
+
+        this.updateAvatarDisplay();
+        this.displayInventory();
+    }
+    updateAvatarDisplay() {
+        // Remove todos os itens, exceto o avatar base (índice 0)
+        this.avatarContainer.list.slice(1).forEach(child => child.destroy());
+        
+        Object.values(this.userData.equippedItems).forEach(itemId => {
+            const itemData = this.brindes.find(b => b.id === itemId);
+            if(itemData) {
+                const itemSprite = this.add.image(0, 0, itemData.id);
+                this.avatarContainer.add(itemSprite);
             }
         });
     }
-    buyItem(item, button) {
-        if (this.userData.score >= item.preco && !this.userData.inventory.includes(item.id)) {
-            this.userData.score -= item.preco;
-            this.userData.inventory.push(item.id);
-            localStorage.setItem('aventuraSaberUser', JSON.stringify(this.userData));
+    displayInventory() {
+        this.inventoryContainer.removeAll(true);
+        let startY = 0;
+        const spacingY = 80;
+        this.userData.inventory.forEach((itemId) => {
+            const itemData = this.brindes.find(b => b.id === itemId);
+            if(itemData) {
+                const itemGroup = this.add.container(0, startY);
+                itemGroup.add(this.add.image(-100, 0, itemData.id).setScale(0.5));
+                itemGroup.add(this.add.text(0, 0, itemData.nome, { fontSize: '20px', fill: '#FFFFFF' }).setOrigin(0.5, 0.5));
+                
+                const isEquipped = this.userData.equippedItems[itemData.type] === itemData.id;
+                const buttonText = isEquipped ? 'Remover' : 'Equipar';
+                const buttonColor = isEquipped ? '#dc3545' : '#28a745';
 
-            this.scoreText.setText(`Seus Pontos: ${this.userData.score}`);
-            button.setText('Comprado').setBackgroundColor('#555555').disableInteractive();
-            // Futuramente: atualizar outros botões que podem ter se tornado inativos
+                const equipButton = this.add.text(150, 0, buttonText, { fontSize: '18px', fill: '#FFFFFF', backgroundColor: buttonColor, padding: {x:10, y:5} }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+                equipButton.on('pointerdown', () => this.toggleEquip(itemData));
+                itemGroup.add(equipButton);
+                
+                this.inventoryContainer.add(itemGroup);
+                startY += spacingY;
+            }
+        });
+    }
+    toggleEquip(itemToToggle) {
+        const isEquipped = this.userData.equippedItems[itemToToggle.type] === itemToToggle.id;
+        if (isEquipped) {
+            delete this.userData.equippedItems[itemToToggle.type]; // Unequip
+        } else {
+            this.userData.equippedItems[itemToToggle.type] = itemToToggle.id; // Equip
         }
+        localStorage.setItem('aventuraSaberUser', JSON.stringify(this.userData));
+        this.updateAvatarDisplay(); // Atualiza o avatar grande
+        this.displayInventory();  // Redesenha os botões do inventário
     }
 }
 
@@ -199,7 +233,7 @@ const config = {
     dom: { createContainer: true },
     parent: 'game-container',
     backgroundColor: '#000033',
-    scene: [MainMenuScene, GameScene, ShopScene]
+    scene: [MainMenuScene, GameScene, ShopScene, CustomizationScene]
 };
 
 const game = new Phaser.Game(config);
